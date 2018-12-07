@@ -18,9 +18,10 @@ globals
 	boolean flagCreate
 	boolean activeDoublePoint = false
 endglobals
-function printRound takes integer numbRound returns nothing
-	call LeaderboardSetLabelBJ( tablePoints, "Ronda " + numbRound )
-endfunction
+//function printRound takes integer numbRound returns nothing
+	//call LeaderboardSetLabelBJ( tablePoints, "Ronda " + I2S(numbRound) )
+	//call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(numbRound))
+//endfunction
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	if numbPlayer == 1 and numbRound == 1 then
@@ -178,8 +179,11 @@ function newRound takes nothing returns nothing
 	local integer addZombie
 	local real waitCreate
 	set round = round + 1
-	call printRound(round)
+	//call printRound(round)
+	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
+	//call BJDebugMsg("here 1")
 	call TriggerExecute( gg_trg_NewAliades )
+	//call BJDebugMsg("here 2")
 	set totalzombie = 0
 	set inmapzombie = 0
 	call PolledWait(TIME_BREAKROUND)
@@ -270,13 +274,14 @@ function useMysteryBox takes unit user returns nothing
 endfunction
 function createTablePoints takes nothing returns nothing
 	local integer i = 1
-	set tablePoints = CreateLeaderboardBJ( GetPlayersAll(), "" )
+	set tablePoints = CreateLeaderboard()
+    call ForceSetLeaderboardBJ(tablePoints, GetPlayersAll())
+    call LeaderboardDisplay(tablePoints, true)
 	loop
 		exitwhen i > players
 		call LeaderboardAddItemBJ( ConvertedPlayer(i), tablePoints, GetPlayerName(ConvertedPlayer(i)), 0 )
 		set i = i + 1
 	endloop
-	call LeaderboardDisplayBJ( true, tablePoints )
 endfunction
 function addPointInScore takes unit zombie returns nothing
 	local integer addPoint
@@ -305,6 +310,7 @@ endfunction
 function init takes nothing returns nothing
 	local integer index
 	local player indexPlayer
+	//local timer t = CreateTimer()
 	set index = 0
 	loop
 		set indexPlayer = Player(index)
@@ -314,6 +320,11 @@ function init takes nothing returns nothing
 		set index = index + 1
 		exitwhen index == MAX_PLAYERS
 	endloop
+	set activeDoublePoint = false
+	call PolledWait( .1 )
+	call createTablePoints()
+	//call TimerStart( t, .1, false, function createTablePoints )
+	//set t = null
 	call newRound()
 endfunction
 function disablex2 takes nothing returns nothing
