@@ -13,15 +13,11 @@ globals
 	integer players = 0
 	integer usesMisterBox = 0
 	leaderboard tablePoints
-	unit misteryBox = gg_unit_h000_0005 //MisteryBox
+	unit misteryBox = gg_unit_h000_0005
 	integer array pointPlayer
 	boolean flagCreate
 	boolean activeDoublePoint = false
 endglobals
-//function printRound takes integer numbRound returns nothing
-	//call LeaderboardSetLabelBJ( tablePoints, "Ronda " + I2S(numbRound) )
-	//call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(numbRound))
-//endfunction
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	if numbPlayer == 1 and numbRound == 1 then
@@ -179,13 +175,9 @@ function newRound takes nothing returns nothing
 	local integer addZombie
 	local real waitCreate
 	set round = round + 1
-	//call printRound(round)
-	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
-	//call BJDebugMsg("here 1")
-	call TriggerExecute( gg_trg_NewAliades )
-	//call BJDebugMsg("here 2")
 	set totalzombie = 0
 	set inmapzombie = 0
+	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
 	call PolledWait(TIME_BREAKROUND)
 	if ModuloInteger(round, 5) == 0 then
 		set totalzombie = reckonWolf(round, players)
@@ -220,10 +212,6 @@ function deadZombie takes unit zombie returns nothing
 		call newRound()
 	endif
 endfunction
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
 function actionThunderGun takes unit c, group gt returns nothing
 	local location locationCaster
 	local location locationTarget
@@ -263,7 +251,6 @@ function useMysteryBox takes unit user returns nothing
 		call UnitAddAbilityBJ( 'Amrf', misteryBox )
 		call SetUnitFlyHeightBJ( misteryBox, 1500.00, 100.00 )
 		call PolledWait( 10.00 )
-		//call SetUnitPositionLoc( misteryBox, GetRectCenter(udg_regionesMisteryBox[GetRandomInt(1, 6)]) )
 		call SetUnitFlyHeightBJ( misteryBox, 0.00, 100.00 )
 		call UnitRemoveAbilityBJ( 'Amrf', misteryBox )
 	else
@@ -275,8 +262,8 @@ endfunction
 function createTablePoints takes nothing returns nothing
 	local integer i = 1
 	set tablePoints = CreateLeaderboard()
-    call ForceSetLeaderboardBJ(tablePoints, GetPlayersAll())
-    call LeaderboardDisplay(tablePoints, true)
+	call ForceSetLeaderboardBJ(tablePoints, GetPlayersAll())
+	call LeaderboardDisplay(tablePoints, true)
 	loop
 		exitwhen i > players
 		call LeaderboardAddItemBJ( ConvertedPlayer(i), tablePoints, GetPlayerName(ConvertedPlayer(i)), 0 )
@@ -308,23 +295,19 @@ function addPointInScore takes unit zombie returns nothing
 	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
 endfunction
 function init takes nothing returns nothing
-	local integer index
-	local player indexPlayer
-	//local timer t = CreateTimer()
-	set index = 0
+	local integer i = 0
 	loop
-		set indexPlayer = Player(index)
-		if (GetPlayerSlotState(indexPlayer) == PLAYER_SLOT_STATE_PLAYING) then
+		if (GetPlayerSlotState(Player(players)) == PLAYER_SLOT_STATE_PLAYING) then
+			call CreateUnitAtLoc(Player(players), 'z000', GetPlayerStartLocationLoc(Player(players)), bj_UNIT_FACING)
+			call GroupAddUnitSimple( GetLastCreatedUnit(), udg_grupoAliados )
 			set players = players + 1
 		endif
-		set index = index + 1
-		exitwhen index == MAX_PLAYERS
+		set i = i + 1
+		exitwhen i == MAX_PLAYERS
 	endloop
 	set activeDoublePoint = false
 	call PolledWait( .1 )
 	call createTablePoints()
-	//call TimerStart( t, .1, false, function createTablePoints )
-	//set t = null
 	call newRound()
 endfunction
 function disablex2 takes nothing returns nothing
