@@ -1,7 +1,7 @@
 globals
 	constant integer LIMIT_ZOMBIE		= 24
 	constant integer LIMIT_WOLF			= 5
-	constant integer MAX_USEMISTERYBOX	= 10
+	constant integer MAX_USEMISTERYBOX	= 5
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_HURT			= 10
 	constant integer POINT_KILL			= 100
@@ -13,8 +13,9 @@ globals
 	integer players = 0
 	integer usesMisterBox = 0
 	leaderboard tablePoints
-	unit misteryBox = gg_unit_h000_0005
+	unit misteryBox
 	integer array pointPlayer
+	rect array pointsMisteryBox
 	boolean flagCreate
 	boolean activeDoublePoint = false
 endglobals
@@ -234,29 +235,44 @@ function actionThunderGun takes unit c, group gt returns nothing
 	call DestroyGroup(gz)
 	set gz = null
 endfunction
+function UnitFlyUp takes unit u, real h, real v returns nothing
+	call UnitAddAbility( u, 'Amrf' )
+	call UnitRemoveAbility( u, 'Amrf' )
+	call SetUnitFlyHeight( u, h, v )
+endfunction
+function UnitFlyDown takes unit u , real v returns nothing
+	call UnitAddAbility( u, 'Amrf' )
+	call UnitRemoveAbility( u, 'Amrf' )
+	call SetUnitFlyHeight( u, 0.01, v )
+endfunction
 function doJump takes unit u returns nothing
-	call UnitAddAbilityBJ( 'Amrf', u )
-	call UnitRemoveAbilityBJ( 'Amrf', u )
-	call SetUnitPathing( u, false )
-	call SetUnitFlyHeightBJ( u, 180.00, 1000.00 )
-	call TriggerSleepAction( .21 )
-	call SetUnitFlyHeightBJ( u, 0.00, 1200.00 )
-	call SetUnitPathing( u, true )
+	call UnitFlyUp( u, 180.00, 1200.00 )
+	call PolledWait( .21 )
+	call UnitFlyDown( u, 1200.00 )
 endfunction
 function useMysteryBox takes unit user returns nothing
 	local integer i
+	local unit randomWeapon
+	local effect efectUseMisteryBox
 	if ( usesMisterBox == MAX_USEMISTERYBOX ) then
 		set usesMisterBox = 0
-		call BlzUnitInterruptAttack( user )
-		call UnitAddAbilityBJ( 'Amrf', misteryBox )
-		call SetUnitFlyHeightBJ( misteryBox, 1500.00, 100.00 )
+		call UnitFlyUp( misteryBox, 1500.00, 200.00 )
 		call PolledWait( 10.00 )
-		call SetUnitFlyHeightBJ( misteryBox, 0.00, 100.00 )
-		call UnitRemoveAbilityBJ( 'Amrf', misteryBox )
+		call UnitFlyDown( misteryBox, 200.00 )
+		set i = GetRandomInt(0, 5)
+		call SetUnitPositionLoc( misteryBox, GetRectCenter(pointsMisteryBox[i]) )
 	else
-		call BJDebugMsg( "Unidad que ataca: " + GetUnitName(user) )
-		set i = GetRandomInt(1, 6)
 		set usesMisterBox = usesMisterBox + 1
+		call SetUnitInvulnerable( misteryBox, true )
+		set efectUseMisteryBox = AddSpecialEffectTarget( "Objects\\RandomObject\\RandomObject.mdl", misteryBox, "overhead" )
+		call BlzSetSpecialEffectScale( efectUseMisteryBox, .85 )
+		call PolledWait( 5.00 )
+		call DestroyEffect( efectUseMisteryBox )
+		call PolledWait( 5.00 )
+		set efectUseMisteryBox = AddSpecialEffectTarget( "Units\\Creeps\\HeroTinkerRobot\\HeroTinkerRobot.mdl", misteryBox, "overhead" )
+		call PolledWait( 5.00 )
+		call DestroyEffect( efectUseMisteryBox )
+		call SetUnitInvulnerable( misteryBox, false )
 	endif
 endfunction
 function createTablePoints takes nothing returns nothing
@@ -287,7 +303,7 @@ function addPointInScore takes unit zombie returns nothing
 	set idAliade = GetConvertedPlayerId(GetOwningPlayer(aliade))
 	set pointPlayer[idAliade] = pointPlayer[idAliade] + addPoint
 	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, pointPlayer[idAliade] )
-	call LeaderboardSortItemsByValue(tablePoints, true)
+	call LeaderboardSortItemsByValue(tablePoints, false)
 	call CreateTextTagUnitBJ( "+" + I2S(addPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
 	call SetTextTagLifespanBJ( GetLastCreatedTextTag(), 0.60 )
@@ -296,9 +312,19 @@ function addPointInScore takes unit zombie returns nothing
 endfunction
 function init takes nothing returns nothing
 	local integer i = 0
+
+	set misteryBox = gg_unit_h003_0008
+
+	set pointsMisteryBox[0] = gg_rct_MisteryBox01
+	set pointsMisteryBox[1] = gg_rct_MisteryBox02
+	set pointsMisteryBox[2] = gg_rct_MisteryBox03
+	set pointsMisteryBox[3] = gg_rct_MisteryBox04
+	set pointsMisteryBox[4] = gg_rct_MisteryBox05
+	set pointsMisteryBox[5] = gg_rct_MisteryBox06
+
 	loop
 		if (GetPlayerSlotState(Player(players)) == PLAYER_SLOT_STATE_PLAYING) then
-			call CreateUnitAtLoc(Player(players), 'z000', GetPlayerStartLocationLoc(Player(players)), bj_UNIT_FACING)
+			call CreateUnitAtLoc(Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), bj_UNIT_FACING)
 			call GroupAddUnitSimple( GetLastCreatedUnit(), udg_grupoAliados )
 			set players = players + 1
 		endif
