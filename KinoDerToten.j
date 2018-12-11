@@ -1,7 +1,7 @@
 globals
 	constant integer LIMIT_ZOMBIE		= 24
 	constant integer LIMIT_WOLF			= 5
-	constant integer MAX_USEMISTERYBOX	= 5
+	constant integer MAX_USEMISTERYBOX	= 2
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_HURT			= 10
 	constant integer POINT_KILL			= 100
@@ -246,31 +246,29 @@ function UnitFlyDown takes unit u , real v returns nothing
 	call SetUnitFlyHeight( u, 0.01, v )
 endfunction
 function doJump takes unit u returns nothing
-	call UnitFlyUp( u, 180.00, 1200.00 )
+	call UnitFlyUp( u, 200.00, 1200.00 )
 	call PolledWait( .21 )
 	call UnitFlyDown( u, 1200.00 )
 endfunction
 function useMysteryBox takes unit user returns nothing
-	local integer i
-	local unit randomWeapon
 	local effect efectUseMisteryBox
 	if ( usesMisterBox == MAX_USEMISTERYBOX ) then
 		set usesMisterBox = 0
+		call SetUnitInvulnerable( misteryBox, true )
 		call UnitFlyUp( misteryBox, 1500.00, 200.00 )
 		call PolledWait( 10.00 )
 		call UnitFlyDown( misteryBox, 200.00 )
-		set i = GetRandomInt(0, 5)
-		call SetUnitPositionLoc( misteryBox, GetRectCenter(pointsMisteryBox[i]) )
+		call SetUnitInvulnerable( misteryBox, false )
+		call SetUnitPositionLoc( misteryBox, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
 	else
 		set usesMisterBox = usesMisterBox + 1
 		call SetUnitInvulnerable( misteryBox, true )
 		set efectUseMisteryBox = AddSpecialEffectTarget( "Objects\\RandomObject\\RandomObject.mdl", misteryBox, "overhead" )
 		call BlzSetSpecialEffectScale( efectUseMisteryBox, .85 )
-		call PolledWait( 5.00 )
 		call DestroyEffect( efectUseMisteryBox )
 		call PolledWait( 5.00 )
 		set efectUseMisteryBox = AddSpecialEffectTarget( "Units\\Creeps\\HeroTinkerRobot\\HeroTinkerRobot.mdl", misteryBox, "overhead" )
-		call PolledWait( 5.00 )
+		call PolledWait( 15.00 )
 		call DestroyEffect( efectUseMisteryBox )
 		call SetUnitInvulnerable( misteryBox, false )
 	endif
@@ -312,26 +310,23 @@ function addPointInScore takes unit zombie returns nothing
 endfunction
 function init takes nothing returns nothing
 	local integer i = 0
-
-	set misteryBox = gg_unit_h003_0008
-
 	set pointsMisteryBox[0] = gg_rct_MisteryBox01
 	set pointsMisteryBox[1] = gg_rct_MisteryBox02
 	set pointsMisteryBox[2] = gg_rct_MisteryBox03
 	set pointsMisteryBox[3] = gg_rct_MisteryBox04
 	set pointsMisteryBox[4] = gg_rct_MisteryBox05
 	set pointsMisteryBox[5] = gg_rct_MisteryBox06
-
+	set misteryBox = CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'h003',  GetRectCenter(pointsMisteryBox[2]), 0.00 )
+	set activeDoublePoint = false
 	loop
-		if (GetPlayerSlotState(Player(players)) == PLAYER_SLOT_STATE_PLAYING) then
-			call CreateUnitAtLoc(Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), bj_UNIT_FACING)
+		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
+			call CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
 			call GroupAddUnitSimple( GetLastCreatedUnit(), udg_grupoAliados )
 			set players = players + 1
 		endif
 		set i = i + 1
 		exitwhen i == MAX_PLAYERS
 	endloop
-	set activeDoublePoint = false
 	call PolledWait( .1 )
 	call createTablePoints()
 	call newRound()
