@@ -6,18 +6,18 @@ globals
 	constant integer POINT_HURT			= 10
 	constant integer POINT_KILL			= 100
 	constant integer TIME_BREAKROUND	= 4
-	integer round = 0
+	integer round = 35648
 	integer totalzombie
 	integer inmapzombie
 	integer limitCreate
 	integer players = 0
 	integer usesMisterBox = 0
 	leaderboard tablePoints
-	unit misteryBox
 	integer array pointPlayer
 	rect array pointsMisteryBox
 	boolean flagCreate
 	boolean activeDoublePoint = false
+	boolean instantKill = false
 endglobals
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
@@ -250,27 +250,27 @@ function doJump takes unit u returns nothing
 	call PolledWait( .21 )
 	call UnitFlyDown( u, 1200.00 )
 endfunction
-function useMysteryBox takes unit user returns nothing
+function useMysteryBox takes unit box, unit user returns nothing
 	local effect efectUseMisteryBox
 	if ( usesMisterBox == MAX_USEMISTERYBOX ) then
 		set usesMisterBox = 0
-		call SetUnitInvulnerable( misteryBox, true )
-		call UnitFlyUp( misteryBox, 1500.00, 200.00 )
+		call SetUnitInvulnerable( box, true )
+		call UnitFlyUp( box, 1500.00, 200.00 )
 		call PolledWait( 10.00 )
-		call UnitFlyDown( misteryBox, 200.00 )
-		call SetUnitInvulnerable( misteryBox, false )
-		call SetUnitPositionLoc( misteryBox, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
+		call UnitFlyDown( box, 200.00 )
+		call SetUnitInvulnerable( box, false )
+		call SetUnitPositionLoc( box, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
 	else
 		set usesMisterBox = usesMisterBox + 1
-		call SetUnitInvulnerable( misteryBox, true )
-		set efectUseMisteryBox = AddSpecialEffectTarget( "Objects\\RandomObject\\RandomObject.mdl", misteryBox, "overhead" )
+		call SetUnitInvulnerable( box, true )
+		set efectUseMisteryBox = AddSpecialEffectTarget( "Objects\\RandomObject\\RandomObject.mdl", box, "overhead" )
 		call BlzSetSpecialEffectScale( efectUseMisteryBox, .85 )
 		call DestroyEffect( efectUseMisteryBox )
 		call PolledWait( 5.00 )
-		set efectUseMisteryBox = AddSpecialEffectTarget( "Units\\Creeps\\HeroTinkerRobot\\HeroTinkerRobot.mdl", misteryBox, "overhead" )
+		set efectUseMisteryBox = AddSpecialEffectTarget( "Units\\Creeps\\HeroTinkerRobot\\HeroTinkerRobot.mdl", box, "overhead" )
 		call PolledWait( 15.00 )
 		call DestroyEffect( efectUseMisteryBox )
-		call SetUnitInvulnerable( misteryBox, false )
+		call SetUnitInvulnerable( box, false )
 	endif
 endfunction
 function createTablePoints takes nothing returns nothing
@@ -294,6 +294,10 @@ function addPointInScore takes unit zombie returns nothing
 	else
 		set addPoint = POINT_HURT
 		set aliade = GetAttacker()
+		if instantKill then
+			set addPoint = addPoint + POINT_KILL
+			call KillUnit(zombie)
+		endif
 	endif
 	if activeDoublePoint then
 		set addPoint = addPoint * 2
@@ -316,7 +320,7 @@ function init takes nothing returns nothing
 	set pointsMisteryBox[3] = gg_rct_MisteryBox04
 	set pointsMisteryBox[4] = gg_rct_MisteryBox05
 	set pointsMisteryBox[5] = gg_rct_MisteryBox06
-	set misteryBox = CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'h003',  GetRectCenter(pointsMisteryBox[2]), 0.00 )
+	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'h003',  GetRectCenter(pointsMisteryBox[2]), 0.00 )
 	set activeDoublePoint = false
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
@@ -342,5 +346,49 @@ function enabledx2 takes nothing returns nothing
 	local timer t = CreateTimer()
 	set activeDoublePoint = true
 	call TimerStart( t, 30.00, false, function disablex2 )
+	set t = null
+endfunction
+function isMysteryBox takes nothing returns boolean
+	return ( GetUnitTypeId(GetFilterUnit()) == 'h003' )
+endfunction
+function getPicked takes nothing returns nothing
+	call RemoveUnit( GetEnumUnit() )
+endfunction
+function disableFireSale takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local integer i = 0
+	loop
+		call ForGroupBJ( GetUnitsInRectMatching(pointsMisteryBox[i], Condition(function isMysteryBox)), function getPicked )
+		set i = i + 1
+		exitwhen i == 6
+	endloop
+	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'h003',  GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]), 0.00 )
+	call PauseTimer( t )
+	call DestroyTimer( t )
+	set t = null
+endfunction
+function enableFireSale takes nothing returns nothing
+	local timer t = CreateTimer()
+	local integer i = 0
+	loop
+		call ForGroupBJ( GetUnitsInRectMatching(pointsMisteryBox[i], Condition(function isMysteryBox)), function getPicked )
+		call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'h003',  GetRectCenter(pointsMisteryBox[i]), 0.00 )
+		set i = i + 1
+		exitwhen i == 6
+	endloop
+	call TimerStart( t, 30.00, false, function disableFireSale )
+	set t = null
+endfunction
+function disableInstantKill takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	set instantKill = false
+	call PauseTimer( t )
+	call DestroyTimer( t )
+	set t = null
+endfunction
+function enabledInstantKill takes nothing returns nothing
+	local timer t = CreateTimer()
+	set instantKill = true
+	call TimerStart( t, 30.00, false, function disableInstantKill )
 	set t = null
 endfunction
