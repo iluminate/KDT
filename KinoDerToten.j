@@ -5,8 +5,8 @@ globals
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_HURT			= 10
 	constant integer POINT_KILL			= 100
-	constant integer TIME_BREAKROUND	= 4
-	integer round = 35648
+	constant integer TIME_BREAKROUND	= 6
+	integer round = 0
 	integer totalzombie
 	integer inmapzombie
 	integer limitCreate
@@ -19,6 +19,9 @@ globals
 	boolean activeDoublePoint = false
 	boolean instantKill = false
 endglobals
+function enableStatus takes nothing returns nothing
+	call BlzSetAbilityTooltip( 'AEfk', "nel", 1 )
+endfunction
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	if numbPlayer == 1 and numbRound == 1 then
@@ -178,7 +181,7 @@ function newRound takes nothing returns nothing
 	set round = round + 1
 	set totalzombie = 0
 	set inmapzombie = 0
-	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
+	call LeaderboardSetLabel(tablePoints, "Ronda #" + I2S(round))
 	call PolledWait(TIME_BREAKROUND)
 	if ModuloInteger(round, 5) == 0 then
 		set totalzombie = reckonWolf(round, players)
@@ -200,6 +203,7 @@ function newRound takes nothing returns nothing
 		call newZombie(waitCreate)
 		set addZombie = addZombie - 1
 	endloop
+	call EnableTrigger( gg_trg_AttractAliade ) // Activar ataque cada x segundos
 	set flagCreate = true
 endfunction
 function deadZombie takes unit zombie returns nothing
@@ -210,6 +214,7 @@ function deadZombie takes unit zombie returns nothing
 		endif
 	endif
 	if totalzombie == 0 and inmapzombie == 0 then
+		call DisableTrigger( gg_trg_AttractAliade ) // Desactivar ataque cada x segundos
 		call newRound()
 	endif
 endfunction
@@ -246,6 +251,7 @@ function UnitFlyDown takes unit u , real v returns nothing
 	call SetUnitFlyHeight( u, 0.01, v )
 endfunction
 function doJump takes unit u returns nothing
+	call enableStatus()
 	call UnitFlyUp( u, 200.00, 1200.00 )
 	call PolledWait( .21 )
 	call UnitFlyDown( u, 1200.00 )
@@ -314,6 +320,7 @@ function addPointInScore takes unit zombie returns nothing
 endfunction
 function init takes nothing returns nothing
 	local integer i = 0
+	local unit person
 	set pointsMisteryBox[0] = gg_rct_MisteryBox01
 	set pointsMisteryBox[1] = gg_rct_MisteryBox02
 	set pointsMisteryBox[2] = gg_rct_MisteryBox03
@@ -324,14 +331,15 @@ function init takes nothing returns nothing
 	set activeDoublePoint = false
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
-			call CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
-			call GroupAddUnitSimple( GetLastCreatedUnit(), udg_grupoAliados )
+			set person = CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
+			call GroupAddUnit( udg_grupoAliados, person )
 			set players = players + 1
 		endif
 		set i = i + 1
 		exitwhen i == MAX_PLAYERS
 	endloop
-	call PolledWait( .1 )
+	set person = null
+	call PolledWait( .01 )
 	call createTablePoints()
 	call newRound()
 endfunction
@@ -391,4 +399,30 @@ function enabledInstantKill takes nothing returns nothing
 	set instantKill = true
 	call TimerStart( t, 30.00, false, function disableInstantKill )
 	set t = null
+endfunction
+function GetUnitWithLessDistance takes unit zombie, group people returns unit
+	local unit closer
+	local unit person
+	local real nowdistance = 0
+	local real maxdistance = 0
+	loop
+		set person = FirstOfGroup(people)
+		exitwhen person == null
+		set nowdistance = DistanceBetweenPoints(GetUnitLoc(zombie), GetUnitLoc(person))
+		if nowdistance > maxdistance then
+			set closer = person
+		endif
+		call GroupRemoveUnit(people, person)
+	endloop
+	return closer
+endfunction
+function AttackZombie takes unit zombie, group aliados returns nothing
+	local unit victim
+	local group tempaliados = CreateGroup()
+	call GroupAddGroup(aliados, tempaliados)
+	set victim = GetUnitWithLessDistance(zombie, tempaliados)
+	call IssueTargetOrder( zombie, "attack", victim )
+	call DestroyGroup(tempaliados)
+	set victim = null
+	set tempaliados = null
 endfunction
