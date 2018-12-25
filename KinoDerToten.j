@@ -1,23 +1,26 @@
 globals
 	constant integer LIMIT_ZOMBIE		= 24
 	constant integer LIMIT_WOLF			= 5
-	constant integer USES_MISTERYBOX	= 2
+	constant integer USES_MISTERYBOX	= 6
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_INSTAKILL	= 110
 	constant integer TIME_BREAKROUND	= 6
-	integer round = 20
+	constant integer COST_MISTERYBOX	= 950
+	integer usesMisterBox	= 0
+	integer round			= 0
+	integer players			= 0
 	integer totalZombie
 	integer inmapZombie
 	integer limitCreate
-	integer players = 0
-	integer usesMisterBox = 0
-	leaderboard tablePoints
 	integer array pointPlayer
+	leaderboard tablePoints
 	rect array pointsMisteryBox
+	rect array regionZombie
 	boolean flagCreate
-	boolean isActiveDoublePoint = false
-	boolean isActiveInstantKill = false
-	boolean isActivateLight = false
+	boolean isActiveDoublePoint	= false
+	boolean isActiveInstantKill	= false
+	boolean isActivateLight		= false
+	boolean isTimeHellhounds	= false
 endglobals
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
@@ -171,10 +174,18 @@ function createZombie takes nothing returns nothing
 			set typeZombie = 'ugho'
 		endif
 	endif
-	set unitZombie = CreateUnitAtLoc( Player(4), typeZombie,  GetRandomLocInRect(gg_rct_regionZombie), 0.00 )
+	set unitZombie = CreateUnitAtLoc( Player(4), typeZombie, GetRandomLocInRect(regionZombie[GetRandomInt(0,5)]), 0.00 )
 	call BlzSetUnitArmor( unitZombie, round )
 	call SetUnitColor( unitZombie, PLAYER_COLOR_BROWN )
 	call GroupAddUnitSimple( unitZombie, udg_grupoZombies )
+endfunction
+function calTimeHellhounds takes integer ronda returns boolean
+	local integer modulo
+	set modulo = GetRandomInt(4,7)
+	if ModuloInteger(ronda, modulo) == 0 then
+		return true
+	endif
+	return false
 endfunction
 function reckonWolf takes integer numbRound, integer numbPlayer returns integer
 	local real numbWolf
@@ -187,7 +198,8 @@ function newZombie takes real wait returns nothing
 	if wait > 0 then
 		call PolledWait(wait)
 	endif
-	if ModuloInteger(round, 5) == 0 then
+	if isTimeHellhounds then
+		call PolledWait(GetRandomReal(0.00, 6.00))
 		call TriggerExecute( gg_trg_CreateWolf )
 	else
 		call createZombie()
@@ -195,19 +207,17 @@ function newZombie takes real wait returns nothing
 endfunction
 function newRound takes nothing returns nothing
 	local integer addZombie
-	local real waitCreate
 	set round = round + 1
 	set totalZombie = 0
 	set inmapZombie = 0
 	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
 	call PolledWait(TIME_BREAKROUND)
-	if ModuloInteger(round, 5) == 0 then
+	set isTimeHellhounds = calTimeHellhounds(round)
+	if isTimeHellhounds then
 		set totalZombie = reckonWolf(round, players)
-		set waitCreate = GetRandomReal(0.00, 6.00)
 		set limitCreate = LIMIT_WOLF
 	else
 		set totalZombie = reckonZombie(round, players)
-		set waitCreate = 0
 		set limitCreate = LIMIT_ZOMBIE
 	endif
 	if totalZombie > limitCreate then
@@ -218,7 +228,7 @@ function newRound takes nothing returns nothing
 	set flagCreate = false
 	loop
 		exitwhen addZombie <= 0
-		call newZombie(waitCreate)
+		call newZombie(0.00)
 		set addZombie = addZombie - 1
 	endloop
 	call EnableTrigger( gg_trg_AttractAliade )
@@ -250,6 +260,18 @@ function addPointInScore takes integer addPoint, unit aliade returns nothing
 	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, pointPlayer[idAliade] )
 	call LeaderboardSortItemsByValue(tablePoints, false)
 	call CreateTextTagUnitBJ( "+" + I2S(addPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
+	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
+	call SetTextTagLifespanBJ( GetLastCreatedTextTag(), 0.60 )
+	call SetTextTagVelocityBJ( GetLastCreatedTextTag(), 64, 90 )
+	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
+endfunction
+function delPointInScore takes integer delPoint, unit aliade returns nothing
+	local integer idAliade
+	set idAliade = GetConvertedPlayerId(GetOwningPlayer(aliade))
+	set pointPlayer[idAliade] = pointPlayer[idAliade] - delPoint
+	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, pointPlayer[idAliade] )
+	call LeaderboardSortItemsByValue(tablePoints, false)
+	call CreateTextTagUnitBJ( "-" + I2S(delPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
 	call SetTextTagLifespanBJ( GetLastCreatedTextTag(), 0.60 )
 	call SetTextTagVelocityBJ( GetLastCreatedTextTag(), 64, 90 )
@@ -310,19 +332,24 @@ function randomGun takes unit box returns nothing
 	set efectUseMisteryBox = null
 endfunction
 function useMysteryBox takes unit box, unit user returns nothing
-	if ( usesMisterBox == USES_MISTERYBOX ) then
-		set usesMisterBox = 0
-		call SetUnitInvulnerable( box, true )
-		call UnitFlyUp( box, 1500.00, 200.00 )
-		call PolledWait( 10.00 )
-		call UnitFlyDown( box, 200.00 )
-		call SetUnitInvulnerable( box, false )
-		call SetUnitPositionLoc( box, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
-	else
-		set usesMisterBox = usesMisterBox + 1
-		call SetUnitInvulnerable( box, true )
-		call randomGun(box)
-		call SetUnitInvulnerable( box, false )
+	local integer idUser
+	set idUser = GetConvertedPlayerId(GetOwningPlayer(user))
+	if pointPlayer[idUser] >= COST_MISTERYBOX then
+		call delPointInScore( COST_MISTERYBOX, user )
+		if ( usesMisterBox == USES_MISTERYBOX ) then
+			set usesMisterBox = 0
+			call SetUnitInvulnerable( box, true )
+			call UnitFlyUp( box, 1500.00, 200.00 )
+			call PolledWait( 10.00 )
+			call UnitFlyDown( box, 200.00 )
+			call SetUnitInvulnerable( box, false )
+			call SetUnitPositionLoc( box, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
+		else
+			set usesMisterBox = usesMisterBox + 1
+			call SetUnitInvulnerable( box, true )
+			call randomGun(box)
+			call SetUnitInvulnerable( box, false )
+		endif
 	endif
 endfunction
 function createTablePoints takes nothing returns nothing
@@ -345,6 +372,12 @@ function init takes nothing returns nothing
 	set pointsMisteryBox[3] = gg_rct_MisteryBox04
 	set pointsMisteryBox[4] = gg_rct_MisteryBox05
 	set pointsMisteryBox[5] = gg_rct_MisteryBox06
+
+	set regionZombie[0] = gg_rct_RegionZombie01
+	set regionZombie[1] = gg_rct_RegionZombie02
+	set regionZombie[2] = gg_rct_RegionZombie03
+	set regionZombie[3] = gg_rct_RegionZombie04
+	set regionZombie[4] = gg_rct_RegionZombie05
 	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[2]), 0.00 )
 	set isActiveDoublePoint = false
 	loop
