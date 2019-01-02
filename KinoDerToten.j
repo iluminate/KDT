@@ -1,11 +1,13 @@
 globals
-	constant integer LIMIT_ZOMBIE		= 24
+	constant integer LIMIT_ZOMBIE		= 50
 	constant integer LIMIT_WOLF			= 5
-	constant integer USES_MISTERYBOX	= 6
+	constant integer USES_MISTERYBOX	= 10
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_INSTAKILL	= 110
 	constant integer TIME_BREAKROUND	= 6
-	constant integer COST_MISTERYBOX	= 950
+	constant integer COST_MISTERYBOX	= 0
+	constant integer ONE_PERCENT		= 1
+	constant integer HUNDRED_PERCENT	= 100
 	integer usesMisterBox	= 0
 	integer round			= 0
 	integer players			= 0
@@ -21,7 +23,11 @@ globals
 	boolean isActiveInstantKill	= false
 	boolean isActivateLight		= false
 	boolean isTimeHellhounds	= false
+	string array weapons
+	string array modelWeapon
+	hashtable hashtableTimer = InitHashtable()
 endglobals
+
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	if numbPlayer == 1 and numbRound == 1 then
@@ -158,10 +164,8 @@ function reckonZombie takes integer numbRound, integer numbPlayer returns intege
 	endif
 	return R2I(numbZombie + 0.5)
 endfunction
-function isProbability takes real percent returns boolean
-	local integer maxProbability
-	set maxProbability = R2I( 100 / percent )
-	if ( GetRandomInt(1, maxProbability) == 1 ) then
+function isProbability takes integer percent returns boolean
+	if ( GetRandomInt( ONE_PERCENT, HUNDRED_PERCENT ) <= percent ) then
 		return true
 	endif
 	return false
@@ -170,7 +174,7 @@ function createZombie takes nothing returns nothing
 	local unit unitZombie
 	local integer typeZombie = 'nzom'
 	if isActivateLight then
-		if isProbability(10.00) then
+		if isProbability(20) then
 			set typeZombie = 'ugho'
 		endif
 	endif
@@ -277,6 +281,16 @@ function delPointInScore takes integer delPoint, unit aliade returns nothing
 	call SetTextTagVelocityBJ( GetLastCreatedTextTag(), 64, 90 )
 	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
 endfunction
+function UnitFlyUp takes unit u, real h, real v returns nothing
+	call UnitAddAbility( u, 'Amrf' )
+	call UnitRemoveAbility( u, 'Amrf' )
+	call SetUnitFlyHeight( u, h, v )
+endfunction
+function UnitFlyDown takes unit u , real v returns nothing
+	call UnitAddAbility( u, 'Amrf' )
+	call UnitRemoveAbility( u, 'Amrf' )
+	call SetUnitFlyHeight( u, 0.01, v )
+endfunction
 function actionThunderGun takes unit caster, group groupTemporal returns nothing
 	local location locationCaster
 	local location locationTarget
@@ -305,37 +319,48 @@ function actionThunderGun takes unit caster, group groupTemporal returns nothing
 	set locationTemporal = null
 	set firtZombie = null
 endfunction
-function UnitFlyUp takes unit u, real h, real v returns nothing
-	call UnitAddAbility( u, 'Amrf' )
-	call UnitRemoveAbility( u, 'Amrf' )
-	call SetUnitFlyHeight( u, h, v )
-endfunction
-function UnitFlyDown takes unit u , real v returns nothing
-	call UnitAddAbility( u, 'Amrf' )
-	call UnitRemoveAbility( u, 'Amrf' )
-	call SetUnitFlyHeight( u, 0.01, v )
-endfunction
 function doJump takes unit u returns nothing
 	call UnitFlyUp( u, 200.00, 1200.00 )
 	call PolledWait( .21 )
 	call UnitFlyDown( u, 1200.00 )
 endfunction
 function randomGun takes unit box returns nothing
+	local integer i = 0
 	local effect efectUseMisteryBox
-	set efectUseMisteryBox = AddSpecialEffectTarget( "Objects\\RandomObject\\RandomObject.mdl", box, "overhead" )
-	call BlzSetSpecialEffectScale( efectUseMisteryBox, .85 )
-	call DestroyEffect( efectUseMisteryBox )
-	call PolledWait( 5.00 )
-	set efectUseMisteryBox = AddSpecialEffectTarget( "Units\\Creeps\\HeroTinkerRobot\\HeroTinkerRobot.mdl", box, "overhead" )
-	call PolledWait( 15.00 )
-	call DestroyEffect( efectUseMisteryBox )
+	call SetUnitInvulnerable( box, true )
+	/*local integer i = 0
+	local real shift
+	local string text
+	local texttag tag = CreateTextTag()
+	loop
+		set i = i + 1
+		exitwhen i == 50
+		set text = weapons[GetRandomInt(0, 22)]
+		set shift = RMinBJ(StringLength(text) * 7, 200)
+		call SetTextTagText(tag, text, .019)
+		call SetTextTagPos(tag, GetUnitX(box)-shift, GetUnitY(box)+100, 16.0)
+		call PolledWait(.001)
+	endloop
+	call PolledWait(10)
+	call DestroyTextTag(tag)
+	return text*/
+	loop
+		set i = i + 1
+		exitwhen i == 50
+		set efectUseMisteryBox = AddSpecialEffectTarget( modelWeapon[GetRandomInt(0, 13)], box, "overhead" )
+		call DestroyEffect( efectUseMisteryBox )
+		call BlzPlaySpecialEffect( efectUseMisteryBox, ANIM_TYPE_DEATH )
+		call BlzSetSpecialEffectScale( efectUseMisteryBox, 0.00 )
+		call PolledWait(2)
+	endloop
 	set efectUseMisteryBox = null
+	call SetUnitInvulnerable( box, false )
 endfunction
 function useMysteryBox takes unit box, unit user returns nothing
 	local integer idUser
 	set idUser = GetConvertedPlayerId(GetOwningPlayer(user))
 	if pointPlayer[idUser] >= COST_MISTERYBOX then
-		call delPointInScore( COST_MISTERYBOX, user )
+		call SetUnitAnimation( box, "death" )
 		if ( usesMisterBox == USES_MISTERYBOX ) then
 			set usesMisterBox = 0
 			call SetUnitInvulnerable( box, true )
@@ -345,11 +370,11 @@ function useMysteryBox takes unit box, unit user returns nothing
 			call SetUnitInvulnerable( box, false )
 			call SetUnitPositionLoc( box, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
 		else
+			call delPointInScore( COST_MISTERYBOX, user )
 			set usesMisterBox = usesMisterBox + 1
-			call SetUnitInvulnerable( box, true )
 			call randomGun(box)
-			call SetUnitInvulnerable( box, false )
 		endif
+		call SetUnitAnimation( box, "stand" )
 	endif
 endfunction
 function createTablePoints takes nothing returns nothing
@@ -366,19 +391,55 @@ endfunction
 function init takes nothing returns nothing
 	local integer i = 0
 	local unit person
+	set weapons[0]	= "KRM-262"
+	set weapons[1]	= "Kuda"
+	set weapons[2]	= "Sheiva"
+	set weapons[3]	= "HVK-30"
+	set weapons[4]	= "KN-44"
+	set weapons[5]	= "M8A7"
+	set weapons[6]	= "Weevil"
+	set weapons[7]	= "BRM"
+	set weapons[8]	= "Dingo"
+	set weapons[9]	= "48 Dredge"
+	set weapons[10]	= "Gorgon"
+	set weapons[11]	= "Locus"
+	set weapons[12]	= "Drakon"
+	set weapons[13]	= "SVG-100"
+	set weapons[14]	= "Man-O-War"
+	set weapons[15]	= "205 Brecci"
+	set weapons[16]	= "Haymaker 12"
+	set weapons[17]	= "XM-53"
+	set weapons[18]	= "Raygun"
+	set weapons[19]	= "Thundergun"
+	set weapons[20]	= "Galil"
+	set weapons[21]	= "M16"
+	set weapons[22]	= "Monkey Bombs"
+	set modelWeapon[0] = "war3mapImported\\ak47_ByEpsilon.mdx"
+	set modelWeapon[1] = "war3mapImported\\Bolt_Pistol.mdx"
+	set modelWeapon[2] = "war3mapImported\\Claw.mdx"
+	set modelWeapon[3] = "war3mapImported\\D9gun.mdx"
+	set modelWeapon[4] = "war3mapImported\\D9gun_Portrait.mdx"
+	set modelWeapon[5] = "war3mapImported\\M82.mdx"
+	set modelWeapon[6] = "war3mapImported\\MP40.mdx"
+	set modelWeapon[7] = "war3mapImported\\mp5_ByEpsilon.mdx"
+	set modelWeapon[8] = "war3mapImported\\Plasma_Pistol.mdx"
+	set modelWeapon[9] = "war3mapImported\\Premium_Bolter.mdx"
+	set modelWeapon[10] = "war3mapImported\\sg552_ByEpsilon.mdx"
+	set modelWeapon[11] = "war3mapImported\\SniperRifle.mdx"
+	set modelWeapon[12] = "war3mapImported\\sta11.mdx"
+	set modelWeapon[13] = "war3mapImported\\Suomi-konepistooli02.mdx"
 	set pointsMisteryBox[0] = gg_rct_MisteryBox01
 	set pointsMisteryBox[1] = gg_rct_MisteryBox02
 	set pointsMisteryBox[2] = gg_rct_MisteryBox03
 	set pointsMisteryBox[3] = gg_rct_MisteryBox04
 	set pointsMisteryBox[4] = gg_rct_MisteryBox05
 	set pointsMisteryBox[5] = gg_rct_MisteryBox06
-
 	set regionZombie[0] = gg_rct_RegionZombie01
 	set regionZombie[1] = gg_rct_RegionZombie02
 	set regionZombie[2] = gg_rct_RegionZombie03
 	set regionZombie[3] = gg_rct_RegionZombie04
 	set regionZombie[4] = gg_rct_RegionZombie05
-	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[2]), 0.00 )
+	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[1]), 0.00 )
 	set isActiveDoublePoint = false
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
@@ -394,9 +455,23 @@ function init takes nothing returns nothing
 	call createTablePoints()
 	call newRound()
 endfunction
+function AllRemoveBuff takes group grupo, integer hechizoId returns nothing
+	local unit persona
+	local group temporal = CreateGroup()
+	call GroupAddGroup(grupo, temporal)
+	loop
+		set persona = FirstOfGroup(temporal)
+		exitwhen persona == null
+		call UnitRemoveAbility( persona, hechizoId )
+		call GroupRemoveUnit(temporal, persona)
+	endloop
+	call DestroyGroup(temporal)
+	set temporal = null
+endfunction
 function disablex2 takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	set isActiveDoublePoint = false
+	call AllRemoveBuff( udg_grupoAliados, 'B000' )
 	call PauseTimer( t )
 	call DestroyTimer( t )
 	set t = null
@@ -422,6 +497,7 @@ function disableFireSale takes nothing returns nothing
 		exitwhen i == 6
 	endloop
 	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]), 0.00 )
+	call AllRemoveBuff( udg_grupoAliados, 'B002' )
 	call PauseTimer( t )
 	call DestroyTimer( t )
 	set t = null
@@ -441,6 +517,7 @@ endfunction
 function disableInstantKill takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	set isActiveInstantKill = false
+	call AllRemoveBuff( udg_grupoAliados, 'B003' )
 	call PauseTimer( t )
 	call DestroyTimer( t )
 	set t = null
@@ -478,4 +555,31 @@ function AttackZombie takes unit zombie, group aliade returns nothing
 	set zombie = null
 	set victim = null
 	set tempAliade = null
+endfunction
+function ActionRaygun takes nothing returns nothing
+endfunction
+function deadAlly takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	call RemoveUnit(LoadUnitHandle(hashtableTimer, GetHandleId(t), 1))
+	call PauseTimer( t )
+	call DestroyTimer( t )
+	set t = null
+endfunction
+function decaeAlly takes unit ally returns nothing
+	local timer t = CreateTimer()
+	local effect efecto
+	call SaveUnitHandle(hashtableTimer, GetHandleId(t), 1, ally)
+	call TimerStart( t, 20.00, false, function deadAlly )
+	set t = null
+	call SetUnitInvulnerable( ally, true )
+	//call SetUnitAnimation( ally, "death" )
+	set efecto = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\TalkToMe\\TalkToMe.mdl", ally, "overhead" )
+	call BlzSetSpecialEffectScale( efecto, .5 )
+	call BlzSetSpecialEffectColor( efecto, 120, 120, 120 ) // Blanco
+	/*call PolledWait(5)
+	call BlzSetSpecialEffectColor( efecto, 244, 208, 63 ) // Amarillo
+	call PolledWait(5)
+	call BlzSetSpecialEffectColor( efecto, 230, 126, 34 ) // Naranja
+	call PolledWait(5)
+	call BlzSetSpecialEffectColor( efecto, 192, 57, 43 ) // Rojo*/
 endfunction

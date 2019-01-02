@@ -1,0 +1,330 @@
+﻿STRING 1
+{
+Jugador 1
+}
+
+STRING 2
+{
+Jugador 2
+}
+
+STRING 3
+{
+Jugador 3
+}
+
+STRING 4
+{
+Jugador 4
+}
+
+STRING 5
+{
+Zombies
+}
+
+STRING 6
+{
+Fuerza 1
+}
+
+STRING 7
+{
+Fuerza 2
+}
+
+STRING 10
+{
+Zombie KDT
+}
+
+STRING 11
+{
+4
+}
+
+STRING 12
+{
+Zombie Kino Der Totem
+}
+
+STRING 13
+{
+Kevyn Estrada
+}
+
+STRING 14
+// Unidades: n000 (MonkeyToy), Name (Nombre)
+{
+MonkeyToy
+}
+
+STRING 15
+// Objetos: I000 (Monkey Bomb), Name (Nombre)
+{
+Monkey Bomb
+}
+
+STRING 16
+// Habilidades: A004 (Monkey Bomb), Tip (Ayuda - Normal)
+{
+Monkey |cffffcc00B|romb
+}
+
+STRING 18
+// Habilidades: A004 (Monkey Bomb), Ubertip (Ayuda - Normal - Ampliada)
+{
+Lanza un juguete que atrae alos zombies para despues de <ANs3,Dur1> segundo explotar en sus caras.
+}
+
+STRING 23
+{
+Game Over
+}
+
+STRING 28
+// Objetos: I004 (Nuke), Name (Nombre)
+{
+Nuke
+}
+
+STRING 29
+// Objetos: I004 (Nuke), Description (Descripción)
+{
+Hace explotar a todos los zombies en el mapa
+}
+
+STRING 39
+// Habilidades: A002 (ThunderGun), Name (Nombre)
+{
+ThunderGun
+}
+
+STRING 41
+// Habilidades: A003 (Jump), Name (Nombre)
+{
+Jump
+}
+
+STRING 43
+// Habilidades: A003 (Jump), Ubertip (Ayuda - Normal - Ampliada)
+{
+Jump
+}
+
+STRING 44
+// Habilidades: A003 (Jump), Tip (Ayuda - Normal)
+{
+Jump
+}
+
+STRING 52
+// Habilidades: A002 (ThunderGun), Tip (Ayuda - Normal)
+{
+La Thunder Gund
+}
+
+STRING 53
+// Habilidades: A002 (ThunderGun), Ubertip (Ayuda - Normal - Ampliada)
+{
+Explusa a los zombies.
+}
+
+STRING 54
+// Habilidades: A004 (Monkey Bomb), Hotkey (Acceso rápido - Normal)
+{
+R
+}
+
+STRING 55
+// Habilidades: A003 (Jump), Hotkey (Acceso rápido - Normal)
+{
+W
+}
+
+STRING 64
+// Objetos: I002 (Double Point), Description (Descripción)
+{
+Multiplica los puntos obtenidos x2
+}
+
+STRING 68
+// Unidades: H002 (Marine), Name (Nombre)
+{
+Marine
+}
+
+STRING 69
+// Unidades: H002 (Marine), Propernames (Nombres propios)
+{
+Tank Dempsey,Nikolai Belinski,Takeo Masakai,Dr. Edward Richtofen
+}
+
+STRING 70
+// Unidades: H002 (Marine), Tip (Ayuda - Básica)
+{
+Invocar Marine
+}
+
+STRING 71
+// Unidades: H002 (Marine), Awakentip (Ayuda - Despertar)
+{
+Revivir Marine
+}
+
+STRING 72
+// Unidades: H002 (Marine), Revivetip (Ayuda - Revivir)
+{
+Revivir Marine
+}
+
+STRING 75
+// Objetos: I001 (Fire Sale), Description (Descripción)
+{
+Oferta de cajas misteriosas
+}
+
+STRING 77
+// Objetos: I003 (Instant Kill), Description (Descripción)
+{
+Muerte instantanea para los zombies
+}
+
+STRING 79
+// Unidades: n001 (Mistery Box), Name (Nombre)
+{
+Mistery Box
+}
+
+STRING 80
+// Habilidades: A004 (Monkey Bomb), Name (Nombre)
+{
+Monkey Bomb
+}
+
+STRING 81
+// Objetos: I001 (Fire Sale), Name (Nombre)
+{
+Fire Sale
+}
+
+STRING 82
+// Objetos: I002 (Double Point), Name (Nombre)
+{
+Double Point
+}
+
+STRING 83
+// Objetos: I003 (Instant Kill), Name (Nombre)
+{
+Instant Kill
+}
+
+STRING 84
+// Habilidades: A001 (Double Point), Name (Nombre)
+{
+Double Point
+}
+
+STRING 85
+// Conjuros benéficos/efectos: B000 (Double Point), Bufftip (Ayuda)
+{
+Double Point
+}
+
+STRING 87
+// Habilidades: A005 (Fire Sale), Name (Nombre)
+{
+Fire Sale
+}
+
+STRING 88
+// Habilidades: A006 (Insta Kill), Name (Nombre)
+{
+Insta Kill
+}
+
+STRING 89
+// Habilidades: A007 (Nuke), Name (Nombre)
+{
+Nuke
+}
+
+STRING 90
+// Conjuros benéficos/efectos: B001 (Nuke), Bufftip (Ayuda)
+{
+Nuke
+}
+
+STRING 91
+// Conjuros benéficos/efectos: B001 (Nuke), Buffubertip (Ayuda - Ampliada)
+{
+Looks like a bomb and eleminates all the zombies in the map at the time of detonation. Note that it spreads out slowly and gives you 400 points.
+}
+
+STRING 92
+// Conjuros benéficos/efectos: B000 (Double Point), Buffubertip (Ayuda - Ampliada)
+{
+Looks like a 2 with a x next to it and basically it doubles your points as in hiting a zombie, not your current points.
+}
+
+STRING 93
+// Conjuros benéficos/efectos: B002 (Fire Sale), Bufftip (Ayuda)
+{
+Fire Sale
+}
+
+STRING 94
+// Conjuros benéficos/efectos: B002 (Fire Sale), Buffubertip (Ayuda - Ampliada)
+{
+Looks like a big tag with "Sale" on it and reduces the price of everything, makes the random weapon box be everywhere, and reduces the price of the random weapon box to 10 points.
+}
+
+STRING 95
+// Conjuros benéficos/efectos: B003 (Insta Kill), Bufftip (Ayuda)
+{
+Insta Kill
+}
+
+STRING 96
+// Conjuros benéficos/efectos: B003 (Insta Kill), Buffubertip (Ayuda - Ampliada)
+{
+Looks like a skull and basically, it's one hit kill.
+}
+
+STRING 97
+// Conjuros benéficos/efectos: B001 (Nuke), EditorName (Nombre (sólo editor))
+{
+Nuke
+}
+
+STRING 98
+// Conjuros benéficos/efectos: B000 (Double Point), EditorName (Nombre (sólo editor))
+{
+Double Point
+}
+
+STRING 99
+// Conjuros benéficos/efectos: B002 (Fire Sale), EditorName (Nombre (sólo editor))
+{
+Fire Sale
+}
+
+STRING 100
+// Conjuros benéficos/efectos: B003 (Insta Kill), EditorName (Nombre (sólo editor))
+{
+Insta Kill
+}
+
+STRING 102
+// Habilidades: A000 (Raygun), Name (Nombre)
+{
+Raygun
+}
+
+STRING 104
+// Habilidades: A008 (Weapon), Name (Nombre)
+{
+Weapon
+}
+
