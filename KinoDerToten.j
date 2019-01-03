@@ -532,12 +532,13 @@ function GetUnitWithLessDistance takes unit zombie, group people returns unit
 	local unit closer
 	local unit person
 	local real nowdistance = 0
-	local real maxdistance = 0
+	local real mindistance = 999999
 	loop
 		set person = FirstOfGroup(people)
 		exitwhen person == null
 		set nowdistance = DistanceBetweenPoints(GetUnitLoc(zombie), GetUnitLoc(person))
-		if nowdistance > maxdistance then
+		if nowdistance < mindistance then
+			set mindistance = nowdistance
 			set closer = person
 		endif
 		call GroupRemoveUnit(people, person)
@@ -568,15 +569,22 @@ endfunction
 function decaeAlly takes unit ally returns nothing
 	local timer t = CreateTimer()
 	local effect efecto
+	local integer color = 0
 	call SaveUnitHandle(hashtableTimer, GetHandleId(t), 1, ally)
 	call TimerStart( t, 20.00, false, function deadAlly )
 	set t = null
 	call SetUnitInvulnerable( ally, true )
 	//call SetUnitAnimation( ally, "death" )
-	set efecto = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\TalkToMe\\TalkToMe.mdl", ally, "overhead" )
-	call BlzSetSpecialEffectScale( efecto, .5 )
-	call BlzSetSpecialEffectColor( efecto, 120, 120, 120 ) // Blanco
-	/*call PolledWait(5)
+	set efecto = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuCaster.mdl", ally, "overhead" )
+	loop
+		exitwhen color == 20
+		//call BlzSetSpecialEffectAlpha( efecto, color )
+    	call BlzSetSpecialEffectColorByPlayer( efecto, Player(color) )
+		call PolledWait(.8)
+		set color = color + 1
+	endloop
+	/*call BlzSetSpecialEffectColor( efecto, 240, 240, 240 ) // Blanco
+	call PolledWait(5)
 	call BlzSetSpecialEffectColor( efecto, 244, 208, 63 ) // Amarillo
 	call PolledWait(5)
 	call BlzSetSpecialEffectColor( efecto, 230, 126, 34 ) // Naranja
