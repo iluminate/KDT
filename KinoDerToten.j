@@ -9,7 +9,7 @@ globals
 	constant integer ONE_PERCENT		= 1
 	constant integer HUNDRED_PERCENT	= 100
 	integer usesMisterBox	= 0
-	integer round			= 0
+	integer round			= 40
 	integer players			= 0
 	integer totalZombie
 	integer inmapZombie
@@ -24,7 +24,6 @@ globals
 	boolean isActivateLight		= false
 	boolean isTimeHellhounds	= false
 	string array weapons
-	string array modelWeapon
 	hashtable hashtableTimer = InitHashtable()
 endglobals
 
@@ -326,9 +325,6 @@ function doJump takes unit u returns nothing
 endfunction
 function randomGun takes unit box returns nothing
 	local integer i = 0
-	local effect efectUseMisteryBox
-	call SetUnitInvulnerable( box, true )
-	/*local integer i = 0
 	local real shift
 	local string text
 	local texttag tag = CreateTextTag()
@@ -339,41 +335,29 @@ function randomGun takes unit box returns nothing
 		set shift = RMinBJ(StringLength(text) * 7, 200)
 		call SetTextTagText(tag, text, .019)
 		call SetTextTagPos(tag, GetUnitX(box)-shift, GetUnitY(box)+100, 16.0)
-		call PolledWait(.001)
+		call TriggerSleepAction(.0005)
 	endloop
 	call PolledWait(10)
 	call DestroyTextTag(tag)
-	return text*/
-	loop
-		set i = i + 1
-		exitwhen i == 50
-		set efectUseMisteryBox = AddSpecialEffectTarget( modelWeapon[GetRandomInt(0, 13)], box, "overhead" )
-		call DestroyEffect( efectUseMisteryBox )
-		call BlzPlaySpecialEffect( efectUseMisteryBox, ANIM_TYPE_DEATH )
-		call BlzSetSpecialEffectScale( efectUseMisteryBox, 0.00 )
-		call PolledWait(2)
-	endloop
-	set efectUseMisteryBox = null
-	call SetUnitInvulnerable( box, false )
 endfunction
 function useMysteryBox takes unit box, unit user returns nothing
 	local integer idUser
 	set idUser = GetConvertedPlayerId(GetOwningPlayer(user))
 	if pointPlayer[idUser] >= COST_MISTERYBOX then
 		call SetUnitAnimation( box, "death" )
+		call SetUnitInvulnerable( box, true )
 		if ( usesMisterBox == USES_MISTERYBOX ) then
 			set usesMisterBox = 0
-			call SetUnitInvulnerable( box, true )
 			call UnitFlyUp( box, 1500.00, 200.00 )
 			call PolledWait( 10.00 )
 			call UnitFlyDown( box, 200.00 )
-			call SetUnitInvulnerable( box, false )
 			call SetUnitPositionLoc( box, GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]) )
 		else
 			call delPointInScore( COST_MISTERYBOX, user )
 			set usesMisterBox = usesMisterBox + 1
 			call randomGun(box)
 		endif
+		call SetUnitInvulnerable( box, false )
 		call SetUnitAnimation( box, "stand" )
 	endif
 endfunction
@@ -414,20 +398,6 @@ function init takes nothing returns nothing
 	set weapons[20]	= "Galil"
 	set weapons[21]	= "M16"
 	set weapons[22]	= "Monkey Bombs"
-	set modelWeapon[0] = "war3mapImported\\ak47_ByEpsilon.mdx"
-	set modelWeapon[1] = "war3mapImported\\Bolt_Pistol.mdx"
-	set modelWeapon[2] = "war3mapImported\\Claw.mdx"
-	set modelWeapon[3] = "war3mapImported\\D9gun.mdx"
-	set modelWeapon[4] = "war3mapImported\\D9gun_Portrait.mdx"
-	set modelWeapon[5] = "war3mapImported\\M82.mdx"
-	set modelWeapon[6] = "war3mapImported\\MP40.mdx"
-	set modelWeapon[7] = "war3mapImported\\mp5_ByEpsilon.mdx"
-	set modelWeapon[8] = "war3mapImported\\Plasma_Pistol.mdx"
-	set modelWeapon[9] = "war3mapImported\\Premium_Bolter.mdx"
-	set modelWeapon[10] = "war3mapImported\\sg552_ByEpsilon.mdx"
-	set modelWeapon[11] = "war3mapImported\\SniperRifle.mdx"
-	set modelWeapon[12] = "war3mapImported\\sta11.mdx"
-	set modelWeapon[13] = "war3mapImported\\Suomi-konepistooli02.mdx"
 	set pointsMisteryBox[0] = gg_rct_MisteryBox01
 	set pointsMisteryBox[1] = gg_rct_MisteryBox02
 	set pointsMisteryBox[2] = gg_rct_MisteryBox03
@@ -568,26 +538,20 @@ function deadAlly takes nothing returns nothing
 endfunction
 function decaeAlly takes unit ally returns nothing
 	local timer t = CreateTimer()
-	local effect efecto
-	local integer color = 0
+	local effect eff
 	call SaveUnitHandle(hashtableTimer, GetHandleId(t), 1, ally)
-	call TimerStart( t, 20.00, false, function deadAlly )
+	call TimerStart( t, 60.00, false, function deadAlly )
 	set t = null
+	call GroupRemoveUnit(udg_grupoAliados, ally)
+	call PauseUnitBJ( true, ally )
+	call SetUnitAnimation( ally, "death" )
 	call SetUnitInvulnerable( ally, true )
-	//call SetUnitAnimation( ally, "death" )
-	set efecto = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuCaster.mdl", ally, "overhead" )
-	loop
-		exitwhen color == 20
-		//call BlzSetSpecialEffectAlpha( efecto, color )
-    	call BlzSetSpecialEffectColorByPlayer( efecto, Player(color) )
-		call PolledWait(.8)
-		set color = color + 1
-	endloop
-	/*call BlzSetSpecialEffectColor( efecto, 240, 240, 240 ) // Blanco
-	call PolledWait(5)
-	call BlzSetSpecialEffectColor( efecto, 244, 208, 63 ) // Amarillo
-	call PolledWait(5)
-	call BlzSetSpecialEffectColor( efecto, 230, 126, 34 ) // Naranja
-	call PolledWait(5)
-	call BlzSetSpecialEffectColor( efecto, 192, 57, 43 ) // Rojo*/
+	set eff = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", ally, "overhead" )
+	call BlzSetSpecialEffectColorByPlayer( eff, Player(21) ) // Nieve
+	call PolledWait(10)
+	call BlzSetSpecialEffectColorByPlayer( eff, Player(4) ) // Amarillo
+	call PolledWait(10)
+	call BlzSetSpecialEffectColorByPlayer( eff, Player(5) ) // Naranja
+	call PolledWait(10)
+	call BlzSetSpecialEffectColorByPlayer( eff, Player(0) ) // Rojo
 endfunction
