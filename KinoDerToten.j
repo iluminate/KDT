@@ -9,7 +9,7 @@ globals
 	constant integer ONE_PERCENT		= 1
 	constant integer HUNDRED_PERCENT	= 100
 	integer usesMisterBox	= 0
-	integer round			= 40
+	integer round			= 0
 	integer players			= 0
 	integer totalZombie
 	integer inmapZombie
@@ -24,9 +24,49 @@ globals
 	boolean isActivateLight		= false
 	boolean isTimeHellhounds	= false
 	string array weapons
-	hashtable hashtableTimer = InitHashtable()
+	ally array allys
 endglobals
-
+struct ally
+	unit marine
+	integer totalPoint
+	integer totalDead
+	integer totalKill
+	boolean isDying
+	timer deathTime
+	effect effTarget
+	code handler = null
+	static method over takes nothing returns nothing
+		call RemoveUnit(this.marine)
+		call PauseTimer( this.deathTime )
+		call DestroyTimer( this.deathTime )
+		call DestroyEffect(this.effTarget)
+		set this.deathTime = null
+	endmethod
+	static method create takes nothing returns ally
+		local ally data = ally.allocate()
+		set data.totalPoint = 0
+		set data.totalDead = 0
+		set data.totalKill = 0
+		set data.isDying = false
+		set data.deathTime = CreateTimer()
+		set data.handler = data.over()
+		return data
+	endmethod
+	method dying takes nothing returns nothing
+		call TimerStart( this.deathTime, 60.00, false, function data.handler )
+		call GroupRemoveUnit(udg_grupoAliados, this.marine)
+		call PauseUnitBJ( true, this.marine )
+		call SetUnitAnimation( this.marine, "death" )
+		call SetUnitInvulnerable( this.marine, true )
+		set this.effTarget = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", this.marine, "overhead" )
+	endmethod
+	method revive takes nothing returns nothing
+		call GroupAddUnit(udg_grupoAliados, this.marine)
+		call SetUnitAnimation( this.marine, "stand" )
+		call SetUnitInvulnerable( this.marine, false )
+		call PauseUnitBJ( false, this.marine )
+	endmethod
+endstruct
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	if numbPlayer == 1 and numbRound == 1 then
@@ -328,6 +368,8 @@ function randomGun takes unit box returns nothing
 	local real shift
 	local string text
 	local texttag tag = CreateTextTag()
+	local item gun
+	local effect efectUseMisteryBox
 	loop
 		set i = i + 1
 		exitwhen i == 50
@@ -415,6 +457,7 @@ function init takes nothing returns nothing
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
 			set person = CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
 			call GroupAddUnit( udg_grupoAliados, person )
+			set allys[players] = ally.create()
 			set players = players + 1
 		endif
 		set i = i + 1
@@ -527,16 +570,15 @@ function AttackZombie takes unit zombie, group aliade returns nothing
 	set victim = null
 	set tempAliade = null
 endfunction
-function ActionRaygun takes nothing returns nothing
-endfunction
-function deadAlly takes nothing returns nothing
+/*function deadAlly takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	call RemoveUnit(LoadUnitHandle(hashtableTimer, GetHandleId(t), 1))
 	call PauseTimer( t )
 	call DestroyTimer( t )
 	set t = null
-endfunction
+endfunction*/
 function decaeAlly takes unit ally returns nothing
+	/*
 	local timer t = CreateTimer()
 	local effect eff
 	call SaveUnitHandle(hashtableTimer, GetHandleId(t), 1, ally)
@@ -554,4 +596,15 @@ function decaeAlly takes unit ally returns nothing
 	call BlzSetSpecialEffectColorByPlayer( eff, Player(5) ) // Naranja
 	call PolledWait(10)
 	call BlzSetSpecialEffectColorByPlayer( eff, Player(0) ) // Rojo
+	*/
+	local integer id = GetPlayerId(GetOwningPlayer(ally))
+	call ally[id].dying()
+endfunction
+function doRevive takes unit caster, unit target returns nothing
+	local integer id = GetPlayerId(GetOwningPlayer(target))
+	call ally[id].revive()
+	/*call GroupAddUnit(udg_grupoAliados, target)
+	call SetUnitAnimation( target, "stand" )
+	call SetUnitInvulnerable( target, false )
+	call PauseUnitBJ( false, target )*/
 endfunction
