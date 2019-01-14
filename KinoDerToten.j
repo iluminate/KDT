@@ -5,7 +5,7 @@ globals
 	constant integer MAX_PLAYERS		= 4
 	constant integer POINT_INSTAKILL	= 110
 	constant integer TIME_BREAKROUND	= 6
-	constant integer COST_MISTERYBOX	= 0
+	constant integer COST_MISTERYBOX	= 900
 	constant integer ONE_PERCENT		= 1
 	constant integer HUNDRED_PERCENT	= 100
 	integer usesMisterBox	= 0
@@ -14,7 +14,6 @@ globals
 	integer totalZombie
 	integer inmapZombie
 	integer limitCreate
-	integer array pointPlayer
 	leaderboard tablePoints
 	rect array pointsMisteryBox
 	rect array regionZombie
@@ -25,6 +24,7 @@ globals
 	boolean isTimeHellhounds	= false
 	string array weapons
 	ally array allys
+	hashtable timerHashtable = InitHashtable()
 endglobals
 struct ally
 	unit marine
@@ -32,39 +32,15 @@ struct ally
 	integer totalDead
 	integer totalKill
 	boolean isDying
-	timer deathTime
 	effect effTarget
-	code handler = null
-	static method over takes nothing returns nothing
-		call RemoveUnit(this.marine)
-		call PauseTimer( this.deathTime )
-		call DestroyTimer( this.deathTime )
-		call DestroyEffect(this.effTarget)
-		set this.deathTime = null
-	endmethod
-	static method create takes nothing returns ally
-		local ally data = ally.allocate()
-		set data.totalPoint = 0
-		set data.totalDead = 0
-		set data.totalKill = 0
-		set data.isDying = false
-		set data.deathTime = CreateTimer()
-		set data.handler = data.over()
-		return data
-	endmethod
-	method dying takes nothing returns nothing
-		call TimerStart( this.deathTime, 60.00, false, function data.handler )
-		call GroupRemoveUnit(udg_grupoAliados, this.marine)
-		call PauseUnitBJ( true, this.marine )
-		call SetUnitAnimation( this.marine, "death" )
-		call SetUnitInvulnerable( this.marine, true )
-		set this.effTarget = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", this.marine, "overhead" )
-	endmethod
-	method revive takes nothing returns nothing
-		call GroupAddUnit(udg_grupoAliados, this.marine)
-		call SetUnitAnimation( this.marine, "stand" )
-		call SetUnitInvulnerable( this.marine, false )
-		call PauseUnitBJ( false, this.marine )
+	static method create takes unit marine returns ally
+		local ally new = allocate()
+		set new.totalPoint = 0
+		set new.totalDead = 0
+		set new.totalKill = 0
+		set new.isDying = false
+		set new.marine = marine
+		return new
 	endmethod
 endstruct
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
@@ -289,8 +265,12 @@ function deadZombie takes unit zombie returns nothing
 		call newRound()
 	endif
 endfunction
+function IdOwner takes unit u returns integer
+	return GetPlayerId(GetOwningPlayer(u))
+endfunction
 function addPointInScore takes integer addPoint, unit aliade returns nothing
-	local integer idAliade
+	local integer i = IdOwner(aliade)
+	local ally a = allys[i]
 	if isActiveInstantKill then
 		set addPoint = POINT_INSTAKILL
 		call KillUnit(GetAttackedUnitBJ())
@@ -298,9 +278,8 @@ function addPointInScore takes integer addPoint, unit aliade returns nothing
 	if isActiveDoublePoint then
 		set addPoint = addPoint * 2
 	endif
-	set idAliade = GetConvertedPlayerId(GetOwningPlayer(aliade))
-	set pointPlayer[idAliade] = pointPlayer[idAliade] + addPoint
-	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, pointPlayer[idAliade] )
+	set a.totalPoint = a.totalPoint + addPoint
+	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.totalPoint )
 	call LeaderboardSortItemsByValue(tablePoints, false)
 	call CreateTextTagUnitBJ( "+" + I2S(addPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
@@ -309,10 +288,10 @@ function addPointInScore takes integer addPoint, unit aliade returns nothing
 	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
 endfunction
 function delPointInScore takes integer delPoint, unit aliade returns nothing
-	local integer idAliade
-	set idAliade = GetConvertedPlayerId(GetOwningPlayer(aliade))
-	set pointPlayer[idAliade] = pointPlayer[idAliade] - delPoint
-	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, pointPlayer[idAliade] )
+	local integer i = IdOwner(aliade)
+	local ally a = allys[i]
+	set a.totalPoint = a.totalPoint - delPoint
+	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.totalPoint )
 	call LeaderboardSortItemsByValue(tablePoints, false)
 	call CreateTextTagUnitBJ( "-" + I2S(delPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
@@ -383,9 +362,9 @@ function randomGun takes unit box returns nothing
 	call DestroyTextTag(tag)
 endfunction
 function useMysteryBox takes unit box, unit user returns nothing
-	local integer idUser
-	set idUser = GetConvertedPlayerId(GetOwningPlayer(user))
-	if pointPlayer[idUser] >= COST_MISTERYBOX then
+	local integer i = IdOwner(user)
+	local ally a = allys[i]
+	if a.totalPoint >= COST_MISTERYBOX then
 		call SetUnitAnimation( box, "death" )
 		call SetUnitInvulnerable( box, true )
 		if ( usesMisterBox == USES_MISTERYBOX ) then
@@ -457,7 +436,7 @@ function init takes nothing returns nothing
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
 			set person = CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
 			call GroupAddUnit( udg_grupoAliados, person )
-			set allys[players] = ally.create()
+			set allys[players] = ally.create(person)
 			set players = players + 1
 		endif
 		set i = i + 1
@@ -570,41 +549,37 @@ function AttackZombie takes unit zombie, group aliade returns nothing
 	set victim = null
 	set tempAliade = null
 endfunction
-/*function deadAlly takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	call RemoveUnit(LoadUnitHandle(hashtableTimer, GetHandleId(t), 1))
-	call PauseTimer( t )
-	call DestroyTimer( t )
-	set t = null
-endfunction*/
-function decaeAlly takes unit ally returns nothing
-	/*
-	local timer t = CreateTimer()
-	local effect eff
-	call SaveUnitHandle(hashtableTimer, GetHandleId(t), 1, ally)
-	call TimerStart( t, 60.00, false, function deadAlly )
-	set t = null
-	call GroupRemoveUnit(udg_grupoAliados, ally)
-	call PauseUnitBJ( true, ally )
-	call SetUnitAnimation( ally, "death" )
-	call SetUnitInvulnerable( ally, true )
-	set eff = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", ally, "overhead" )
-	call BlzSetSpecialEffectColorByPlayer( eff, Player(21) ) // Nieve
-	call PolledWait(10)
-	call BlzSetSpecialEffectColorByPlayer( eff, Player(4) ) // Amarillo
-	call PolledWait(10)
-	call BlzSetSpecialEffectColorByPlayer( eff, Player(5) ) // Naranja
-	call PolledWait(10)
-	call BlzSetSpecialEffectColorByPlayer( eff, Player(0) ) // Rojo
-	*/
-	local integer id = GetPlayerId(GetOwningPlayer(ally))
-	call ally[id].dying()
+function deadAlly takes nothing returns nothing
+	local timer deathTime = GetExpiredTimer()
+	local unit aliado = LoadUnitHandle(timerHashtable, GetHandleId(deathTime), 1)
+	local integer i = IdOwner(aliado)
+	local ally a = allys[i]
+	if a.isDying then
+		call RemoveUnit( a.marine )
+	endif
+	call DestroyTimer( deathTime )
+	set deathTime = null
 endfunction
-function doRevive takes unit caster, unit target returns nothing
-	local integer id = GetPlayerId(GetOwningPlayer(target))
-	call ally[id].revive()
-	/*call GroupAddUnit(udg_grupoAliados, target)
-	call SetUnitAnimation( target, "stand" )
-	call SetUnitInvulnerable( target, false )
-	call PauseUnitBJ( false, target )*/
+function decaeAlly takes unit aliado returns nothing
+	local timer deathTime = CreateTimer()
+	local integer i = IdOwner(aliado)
+	local ally a = allys[i]
+	set a.isDying = true
+	call SaveUnitHandle(timerHashtable, GetHandleId(deathTime), 1, a.marine)
+	call GroupRemoveUnit(udg_grupoAliados, a.marine)
+	call TimerStart( deathTime, 60.00, false, function deadAlly )
+	call PauseUnitBJ( true, a.marine )
+	call SetUnitAnimation( a.marine, "death" )
+	call SetUnitInvulnerable( a.marine, true )
+	set a.effTarget = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", a.marine, "overhead" )
+endfunction
+function reviveAlly takes unit aliado returns nothing
+	local integer i = IdOwner(aliado)
+	local ally a = allys[i]
+	set a.isDying = false
+	call GroupAddUnit(udg_grupoAliados, a.marine)
+	call DestroyEffect( a.effTarget )
+	call SetUnitAnimation( a.marine, "stand" )
+	call SetUnitInvulnerable( a.marine, false )
+	call PauseUnitBJ( false, a.marine )
 endfunction
