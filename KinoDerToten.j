@@ -1,5 +1,5 @@
 globals
-	constant integer LIMIT_ZOMBIE		= 50
+	constant integer LIMIT_ZOMBIE		= 80
 	constant integer LIMIT_WOLF			= 5
 	constant integer USES_MISTERYBOX	= 10
 	constant integer MAX_PLAYERS		= 4
@@ -28,19 +28,25 @@ globals
 endglobals
 struct ally
 	unit marine
-	integer totalPoint
+	integer point
 	integer totalDead
 	integer totalKill
 	boolean isDying
 	effect effTarget
 	static method create takes unit marine returns ally
 		local ally new = allocate()
-		set new.totalPoint = 0
+		set new.point = 0
 		set new.totalDead = 0
 		set new.totalKill = 0
 		set new.isDying = false
 		set new.marine = marine
 		return new
+	endmethod
+	method addPoint takes integer point returns nothing
+		set this.point = this.point + point
+	endmethod
+	method delPoint takes integer point returns nothing
+		set this.point = this.point - point
 	endmethod
 endstruct
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
@@ -268,32 +274,32 @@ endfunction
 function IdOwner takes unit u returns integer
 	return GetPlayerId(GetOwningPlayer(u))
 endfunction
-function addPointInScore takes integer addPoint, unit aliade returns nothing
+function addPointInScore takes integer point, unit aliade returns nothing
 	local integer i = IdOwner(aliade)
 	local ally a = allys[i]
 	if isActiveInstantKill then
-		set addPoint = POINT_INSTAKILL
+		set point = POINT_INSTAKILL
 		call KillUnit(GetAttackedUnitBJ())
 	endif
 	if isActiveDoublePoint then
-		set addPoint = addPoint * 2
+		set point = point * 2
 	endif
-	set a.totalPoint = a.totalPoint + addPoint
-	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.totalPoint )
+	call a.addPoint(point)
+	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.point )
 	call LeaderboardSortItemsByValue(tablePoints, false)
-	call CreateTextTagUnitBJ( "+" + I2S(addPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
+	call CreateTextTagUnitBJ( "+" + I2S(point), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
 	call SetTextTagLifespanBJ( GetLastCreatedTextTag(), 0.60 )
 	call SetTextTagVelocityBJ( GetLastCreatedTextTag(), 64, 90 )
 	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
 endfunction
-function delPointInScore takes integer delPoint, unit aliade returns nothing
+function delPointInScore takes integer point, unit aliade returns nothing
 	local integer i = IdOwner(aliade)
 	local ally a = allys[i]
-	set a.totalPoint = a.totalPoint - delPoint
-	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.totalPoint )
+	call a.delPoint(point)
+	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.point )
 	call LeaderboardSortItemsByValue(tablePoints, false)
-	call CreateTextTagUnitBJ( "-" + I2S(delPoint), aliade, 0, 10, 100, 100, 0.00, 0 )
+	call CreateTextTagUnitBJ( "-" + I2S(point), aliade, 0, 10, 100, 100, 0.00, 0 )
 	call SetTextTagPermanentBJ( GetLastCreatedTextTag(), false )
 	call SetTextTagLifespanBJ( GetLastCreatedTextTag(), 0.60 )
 	call SetTextTagVelocityBJ( GetLastCreatedTextTag(), 64, 90 )
@@ -323,7 +329,7 @@ function actionThunderGun takes unit caster, group groupTemporal returns nothing
 		call GroupRemoveUnit(groupZombie, firtZombie)
 		if GetOwningPlayer(firtZombie) == Player(4) then
 			set locationTarget = GetUnitLoc(firtZombie)
-			set locationTemporal = PolarProjectionBJ(locationTarget, 46.00, AngleBetweenPoints(locationCaster, locationTarget))
+			set locationTemporal = PolarProjectionBJ(locationTarget, 80.00, AngleBetweenPoints(locationCaster, locationTarget))
 			call SetUnitPositionLoc( firtZombie, locationTemporal )
 			if IsUnitAliveBJ(firtZombie) == true then
 				call UnitDamageTarget(caster, firtZombie, 30, true, false, ATTACK_TYPE_CHAOS, DAMAGE_TYPE_NORMAL, WEAPON_TYPE_WHOKNOWS)
@@ -364,7 +370,7 @@ endfunction
 function useMysteryBox takes unit box, unit user returns nothing
 	local integer i = IdOwner(user)
 	local ally a = allys[i]
-	if a.totalPoint >= COST_MISTERYBOX then
+	if a.point >= COST_MISTERYBOX then
 		call SetUnitAnimation( box, "death" )
 		call SetUnitInvulnerable( box, true )
 		if ( usesMisterBox == USES_MISTERYBOX ) then
@@ -582,4 +588,68 @@ function reviveAlly takes unit aliado returns nothing
 	call SetUnitAnimation( a.marine, "stand" )
 	call SetUnitInvulnerable( a.marine, false )
 	call PauseUnitBJ( false, a.marine )
+endfunction
+function minAngleThunder takes real angle returns real
+	local real min
+	set min = angle - 90
+	if min > 360 then
+		set min = min - 360
+	endif
+	if min < 0 then
+		set min = min + 360
+	endif
+	return min
+endfunction
+function maxAngleThunder takes real angle returns real
+	local real max
+	set max = angle + 90
+	if max > 360 then
+		set max = max - 360
+	endif
+	if max < 0 then
+		set max = max + 360
+	endif
+	return max
+endfunction
+function isThisOnRadar takes real angle, real left, real right returns boolean
+	if angle >= 90 and angle <= 270 then
+		return ( angle > left ) and ( angle < right )
+	else
+		return ( angle > left ) or ( angle < right )
+	endif
+endfunction
+function useThunderGun takes unit caster, location target returns nothing
+	local real angle
+	local real angleAdjust
+	local real angleLeft
+	local real angleRight
+	local real angleUnit
+	local effect effectThunder
+	local unit affectedUnit
+	local group tempAreaGroup = CreateGroup()
+	local group affectedUnitsGroup = CreateGroup()
+	set angle = AngleBetweenPoints(GetUnitLoc(caster), target)
+	set angleAdjust = angle + 180
+	set angleLeft = minAngleThunder(angleAdjust)
+	set angleRight = maxAngleThunder(angleAdjust)
+	set tempAreaGroup = GetUnitsInRangeOfLocAll(1400.00, GetUnitLoc(caster))
+	loop
+		set affectedUnit = FirstOfGroup(tempAreaGroup)
+		exitwhen(affectedUnit==null)
+		call GroupRemoveUnit(tempAreaGroup, affectedUnit)
+		set angleUnit = AngleBetweenPoints(GetUnitLoc(caster), GetUnitLoc(affectedUnit)) + 180
+		if isThisOnRadar(angleUnit, angleLeft, angleRight) then
+			call GroupAddUnit(affectedUnitsGroup, affectedUnit)
+		endif
+	endloop
+	call GroupAddGroup(affectedUnitsGroup, udg_groupAreaUnitsThunder)
+	call DestroyGroup(tempAreaGroup)
+	set effectThunder = AddSpecialEffectLocBJ( GetUnitLoc(caster), "Abilities\\Spells\\Other\\Tornado\\TornadoElementalSmall.mdl" )
+	call DestroyEffectBJ( effectThunder )
+	call BlzSetSpecialEffectScale( effectThunder, 2.70 )
+	call BlzSetSpecialEffectHeight( effectThunder, 26.00 )
+	call BlzSetSpecialEffectYaw( effectThunder, Deg2Rad(90.00) )
+	call BlzSetSpecialEffectPitch( effectThunder, Deg2Rad(( angle + 90.00 )) )
+	call TriggerSleepAction( 0.14 )
+	call BlzSetSpecialEffectScale( effectThunder, 0.00 )
 endfunction
