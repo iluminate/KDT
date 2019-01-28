@@ -200,7 +200,7 @@ function createZombie takes nothing returns nothing
 		endif
 	endif
 	set unitZombie = CreateUnitAtLoc( Player(4), typeZombie, GetRandomLocInRect(regionZombie[GetRandomInt(0,5)]), 0.00 )
-	call BlzSetUnitArmor( unitZombie, round )
+	call BlzSetUnitArmor( unitZombie, round / 2 )
 	call SetUnitColor( unitZombie, PLAYER_COLOR_BROWN )
 	call GroupAddUnitSimple( unitZombie, udg_grupoZombies )
 endfunction
@@ -441,6 +441,7 @@ function init takes nothing returns nothing
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
 			set person = CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
+			call SelectUnitForPlayerSingle( person, Player(players) )
 			call GroupAddUnit( udg_grupoAliados, person )
 			set allys[players] = ally.create(person)
 			set players = players + 1
@@ -589,27 +590,20 @@ function reviveAlly takes unit aliado returns nothing
 	call SetUnitInvulnerable( a.marine, false )
 	call PauseUnitBJ( false, a.marine )
 endfunction
+function adjustingAngle takes real angle returns real
+	if angle > 360 then
+		set angle = angle - 360
+	endif
+	if angle < 0 then
+		set angle = angle + 360
+	endif
+	return angle
+endfunction
 function minAngleThunder takes real angle returns real
-	local real min
-	set min = angle - 90
-	if min > 360 then
-		set min = min - 360
-	endif
-	if min < 0 then
-		set min = min + 360
-	endif
-	return min
+	return adjustingAngle(angle - 90)
 endfunction
 function maxAngleThunder takes real angle returns real
-	local real max
-	set max = angle + 90
-	if max > 360 then
-		set max = max - 360
-	endif
-	if max < 0 then
-		set max = max + 360
-	endif
-	return max
+	return adjustingAngle(angle + 90)
 endfunction
 function isThisOnRadar takes real angle, real left, real right returns boolean
 	if angle >= 90 and angle <= 270 then
@@ -645,7 +639,7 @@ function useThunderGun takes unit caster, location target returns nothing
 	call GroupAddGroup(affectedUnitsGroup, udg_groupAreaUnitsThunder)
 	call DestroyGroup(tempAreaGroup)
 	set effectThunder = AddSpecialEffectLocBJ( GetUnitLoc(caster), "Abilities\\Spells\\Other\\Tornado\\TornadoElementalSmall.mdl" )
-	call DestroyEffectBJ( effectThunder )
+	call DestroyEffect( effectThunder )
 	call BlzSetSpecialEffectScale( effectThunder, 2.70 )
 	call BlzSetSpecialEffectHeight( effectThunder, 26.00 )
 	call BlzSetSpecialEffectYaw( effectThunder, Deg2Rad(90.00) )
