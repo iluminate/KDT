@@ -1,28 +1,32 @@
 globals
-	constant integer LIMIT_ZOMBIE		= 80
-	constant integer LIMIT_WOLF			= 5
+	constant integer LIMIT_ZOMBIE		= 48
+	constant integer LIMIT_WOLF			= 12
 	constant integer USES_MISTERYBOX	= 10
-	constant integer MAX_PLAYERS		= 4
+	constant integer MAX_PLAYERS		= 24
 	constant integer POINT_INSTAKILL	= 110
 	constant integer TIME_BREAKROUND	= 6
 	constant integer COST_MISTERYBOX	= 900
 	constant integer ONE_PERCENT		= 1
 	constant integer HUNDRED_PERCENT	= 100
 	integer usesMisterBox	= 0
-	integer round			= 0
+	integer round			= 50
 	integer players			= 0
 	integer totalZombie
 	integer inmapZombie
 	integer limitCreate
+	integer tempCountObstacle
 	leaderboard tablePoints
 	rect array pointsMisteryBox
 	rect array regionZombie
+	rect array regionCarpenter
 	boolean flagCreate
 	boolean isActiveDoublePoint	= false
 	boolean isActiveInstantKill	= false
-	boolean isActivateLight		= false
+	boolean isActivateLight		= true
 	boolean isTimeHellhounds	= false
 	string array weapons
+	destructable array objectCarpenter
+	destructable array perk
 	ally array allys
 	hashtable timerHashtable = InitHashtable()
 endglobals
@@ -51,138 +55,7 @@ struct ally
 endstruct
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
-	if numbPlayer == 1 and numbRound == 1 then
-		set numbZombie = 6
-	endif
-	if numbPlayer == 1 and numbRound == 2 then
-		set numbZombie = 8
-	endif
-	if numbPlayer == 1 and numbRound == 3 then
-		set numbZombie = 13
-	endif
-	if numbPlayer == 1 and numbRound == 4 then
-		set numbZombie = 18
-	endif
-	if numbPlayer == 1 and numbRound == 5 then
-		set numbZombie = 24
-	endif
-	if numbPlayer == 1 and numbRound == 6 then
-		set numbZombie = 27
-	endif
-	if numbPlayer == 1 and numbRound == 7 then
-		set numbZombie = 28
-	endif
-	if numbPlayer == 1 and numbRound == 8 then
-		set numbZombie = 28
-	endif
-	if numbPlayer == 1 and numbRound == 9 then
-		set numbZombie = 29
-	endif
-	if numbPlayer == 1 and numbRound == 10 then
-		set numbZombie = 33
-	endif
-	if numbPlayer == 1 and numbRound > 10 then
-		set numbZombie = 0.0842 * (numbRound * numbRound) + 0.1954 * (numbRound) + 22.05
-	endif
-	if numbPlayer == 2 and numbRound == 1 then
-		set numbZombie = 7
-	endif
-	if numbPlayer == 2 and numbRound == 2 then
-		set numbZombie = 9
-	endif
-	if numbPlayer == 2 and numbRound == 3 then
-		set numbZombie = 15
-	endif
-	if numbPlayer == 2 and numbRound == 4 then
-		set numbZombie = 21
-	endif
-	if numbPlayer == 2 and numbRound == 5 then
-		set numbZombie = 27
-	endif
-	if numbPlayer == 2 and numbRound == 6 then
-		set numbZombie = 31
-	endif
-	if numbPlayer == 2 and numbRound == 7 then
-		set numbZombie = 32
-	endif
-	if numbPlayer == 2 and numbRound == 8 then
-		set numbZombie = 33
-	endif
-	if numbPlayer == 2 and numbRound == 9 then
-		set numbZombie = 34
-	endif
-	if numbPlayer == 2 and numbRound == 10 then
-		set numbZombie = 42
-	endif
-	if numbPlayer == 2 and numbRound > 10 then
-		set numbZombie = 0.1793 * (numbRound * numbRound) + 0.0405 * (numbRound) + 23.187
-	endif
-	if numbPlayer == 3 and numbRound == 1 then
-		set numbZombie = 11
-	endif
-	if numbPlayer == 3 and numbRound == 2 then
-		set numbZombie = 14
-	endif
-	if numbPlayer == 3 and numbRound == 3 then
-		set numbZombie = 23
-	endif
-	if numbPlayer == 3 and numbRound == 4 then
-		set numbZombie = 32
-	endif
-	if numbPlayer == 3 and numbRound == 5 then
-		set numbZombie = 41
-	endif
-	if numbPlayer == 3 and numbRound == 6 then
-		set numbZombie = 47
-	endif
-	if numbPlayer == 3 and numbRound == 7 then
-		set numbZombie = 48
-	endif
-	if numbPlayer == 3 and numbRound == 8 then
-		set numbZombie = 50
-	endif
-	if numbPlayer == 3 and numbRound == 9 then
-		set numbZombie = 51
-	endif
-	if numbPlayer == 3 and numbRound == 10 then
-		set numbZombie = 62
-	endif
-	if numbPlayer == 3 and numbRound > 10 then
-		set numbZombie = 0.262 * (numbRound * numbRound) + 0.301 * (numbRound) + 33.114
-	endif
-	if numbPlayer == 4 and numbRound == 1 then
-		set numbZombie = 14
-	endif
-	if numbPlayer == 4 and numbRound == 2 then
-		set numbZombie = 18
-	endif
-	if numbPlayer == 4 and numbRound == 3 then
-		set numbZombie = 30
-	endif
-	if numbPlayer == 4 and numbRound == 4 then
-		set numbZombie = 42
-	endif
-	if numbPlayer == 4 and numbRound == 5 then
-		set numbZombie = 54
-	endif
-	if numbPlayer == 4 and numbRound == 6 then
-		set numbZombie = 62
-	endif
-	if numbPlayer == 4 and numbRound == 7 then
-		set numbZombie = 64
-	endif
-	if numbPlayer == 4 and numbRound == 8 then
-		set numbZombie = 66
-	endif
-	if numbPlayer == 4 and numbRound == 9 then
-		set numbZombie = 68
-	endif
-	if numbPlayer == 4 and numbRound == 10 then
-		set numbZombie = 83
-	endif
-	if numbPlayer == 4 and numbRound > 10 then
-		set numbZombie = 0.3462 * (numbRound * numbRound) + 0.4964 * (numbRound) + 43.164
-	endif
+	set numbZombie = (numbPlayer * 0.01) * (numbRound * numbRound) + (numbPlayer * 0.1) * numbRound + numbPlayer
 	return R2I(numbZombie + 0.5)
 endfunction
 function isProbability takes integer percent returns boolean
@@ -190,6 +63,35 @@ function isProbability takes integer percent returns boolean
 		return true
 	endif
 	return false
+endfunction
+function GetUnitWithLessDistance takes unit zombie, group people returns unit
+	local unit closer
+	local unit person
+	local real nowdistance = 0
+	local real mindistance = 0
+	loop
+		set person = FirstOfGroup(people)
+		exitwhen person == null
+		call GroupRemoveUnit(people, person)
+		set nowdistance = DistanceBetweenPoints(GetUnitLoc(zombie), GetUnitLoc(person))
+		if ( nowdistance < mindistance ) or ( mindistance == 0 ) then
+			set mindistance = nowdistance
+			set closer = person
+		endif
+		set person = null
+	endloop
+	return closer
+endfunction
+function AttackZombie takes unit zombie, group aliade returns nothing
+	local unit victim
+	local group tempAliade = CreateGroup()
+	call GroupAddGroup(aliade, tempAliade)
+	set victim = GetUnitWithLessDistance(zombie, tempAliade)
+	call IssueTargetOrder( zombie, "attack", victim )
+	call DestroyGroup(tempAliade)
+	set tempAliade = null
+	set zombie = null
+	set victim = null
 endfunction
 function createZombie takes nothing returns nothing
 	local unit unitZombie
@@ -199,18 +101,16 @@ function createZombie takes nothing returns nothing
 			set typeZombie = 'ugho'
 		endif
 	endif
-	set unitZombie = CreateUnitAtLoc( Player(4), typeZombie, GetRandomLocInRect(regionZombie[GetRandomInt(0,5)]), 0.00 )
-	call BlzSetUnitArmor( unitZombie, round / 2 )
-	call SetUnitColor( unitZombie, PLAYER_COLOR_BROWN )
+	set unitZombie = CreateUnitAtLoc( Player(25), typeZombie, GetRandomLocInRect(regionZombie[GetRandomInt(0,3)]), 0.00 )
+	call BlzSetUnitArmor( unitZombie, BlzGetUnitArmor(unitZombie) + (round * 0.5) )
+	call BlzSetUnitBaseDamage( unitZombie, BlzGetUnitBaseDamage(unitZombie, 1) + round, 1 )
+	call SetUnitMoveSpeed( unitZombie, GetUnitDefaultMoveSpeed(unitZombie) + (round * 0.1))
+	call BlzSetUnitMaxHP( unitZombie, BlzGetUnitMaxHP(unitZombie) + (10 * round) )
+	call SetUnitLifePercentBJ( unitZombie, 100 )
 	call GroupAddUnitSimple( unitZombie, udg_grupoZombies )
 endfunction
 function calTimeHellhounds takes integer ronda returns boolean
-	local integer modulo
-	set modulo = GetRandomInt(4,7)
-	if ModuloInteger(ronda, modulo) == 0 then
-		return true
-	endif
-	return false
+	return ModuloInteger(ronda, GetRandomInt(4,7)) == 0
 endfunction
 function reckonWolf takes integer numbRound, integer numbPlayer returns integer
 	local real numbWolf
@@ -240,11 +140,12 @@ function newRound takes nothing returns nothing
 	set isTimeHellhounds = calTimeHellhounds(round)
 	if isTimeHellhounds then
 		set totalZombie = reckonWolf(round, players)
-		set limitCreate = LIMIT_WOLF
+		set limitCreate = 2 * players
 	else
 		set totalZombie = reckonZombie(round, players)
 		set limitCreate = LIMIT_ZOMBIE
 	endif
+	call BJDebugMsg("Total Zombies: " + I2S(totalZombie))
 	if totalZombie > limitCreate then
 		set addZombie = limitCreate
 	else
@@ -261,10 +162,18 @@ function newRound takes nothing returns nothing
 endfunction
 function deadZombie takes unit zombie returns nothing
 	set inmapZombie = inmapZombie - 1
-	if totalZombie > 0 and flagCreate == true then
-		if inmapZombie < limitCreate then
-			call newZombie(6.00)
-		endif
+	call GroupRemoveUnitSimple( zombie, udg_grupoZombies )
+	/*if ( GetUnitTypeId(zombie) == 'ugho' ) then
+		call TriggerSleepAction( 1.00 )
+		call UnitDamagePointLoc( zombie, 0, 200.00, GetUnitLoc(zombie), 50.00, ATTACK_TYPE_MELEE, DAMAGE_TYPE_NORMAL )
+	endif*/
+	if isProbability(1) then
+		call CreateItemLoc( udg_powerUps[GetRandomInt(0, 3)], GetUnitLoc(zombie) )
+	endif
+	call TriggerSleepAction( 3.00 )
+	call RemoveUnit( zombie )
+	if totalZombie > 0 and flagCreate == true and inmapZombie < limitCreate then
+		call newZombie(6.00)
 	endif
 	if totalZombie == 0 and inmapZombie == 0 then
 		call DisableTrigger( gg_trg_AttractAliade )
@@ -327,7 +236,7 @@ function actionThunderGun takes unit caster, group groupTemporal returns nothing
 		set firtZombie = FirstOfGroup(groupZombie)
 		exitwhen(firtZombie == null)
 		call GroupRemoveUnit(groupZombie, firtZombie)
-		if GetOwningPlayer(firtZombie) == Player(4) then
+		if GetOwningPlayer(firtZombie) == Player(25) then
 			set locationTarget = GetUnitLoc(firtZombie)
 			set locationTemporal = PolarProjectionBJ(locationTarget, 80.00, AngleBetweenPoints(locationCaster, locationTarget))
 			call SetUnitPositionLoc( firtZombie, locationTemporal )
@@ -344,9 +253,10 @@ function actionThunderGun takes unit caster, group groupTemporal returns nothing
 	set firtZombie = null
 endfunction
 function doJump takes unit u returns nothing
-	call UnitFlyUp( u, 200.00, 1200.00 )
-	call PolledWait( .21 )
-	call UnitFlyDown( u, 1200.00 )
+	call UnitFlyUp( u, 240.00, 1800.00 )
+	call PolledWait( .003 )
+	call UnitFlyDown( u, 900.00 )
+	call SetUnitPathing( u, true )
 endfunction
 function randomGun takes unit box returns nothing
 	local integer i = 0
@@ -399,6 +309,14 @@ function createTablePoints takes nothing returns nothing
 		set i = i + 1
 	endloop
 endfunction
+function addDestructibles takes nothing returns nothing
+    set objectCarpenter[tempCountObstacle] = GetEnumDestructable()
+    set tempCountObstacle = tempCountObstacle + 1
+endfunction
+function registerAllDestructibles takes nothing returns nothing
+    set tempCountObstacle = 0
+	call EnumDestructablesInRectAll( GetPlayableMapRect(), function addDestructibles )
+endfunction
 function init takes nothing returns nothing
 	local integer i = 0
 	local unit person
@@ -435,7 +353,11 @@ function init takes nothing returns nothing
 	set regionZombie[1] = gg_rct_RegionZombie02
 	set regionZombie[2] = gg_rct_RegionZombie03
 	set regionZombie[3] = gg_rct_RegionZombie04
-	set regionZombie[4] = gg_rct_RegionZombie05
+	set regionCarpenter[0] = gg_rct_RegionCarpenter01
+	set regionCarpenter[1] = gg_rct_RegionCarpenter02
+	set regionCarpenter[3] = gg_rct_RegionCarpenter03
+	set perk[0] = CreateDestructableLoc( 'BTrx', GetRectCenter(GetPlayableMapRect()), GetRandomDirectionDeg(), 1, 0 )
+	call SetDestructableAnimationBJ( perk[0], "stand alternate" )
 	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[1]), 0.00 )
 	set isActiveDoublePoint = false
 	loop
@@ -527,35 +449,6 @@ function enabledInstantKill takes nothing returns nothing
 	call TimerStart( t, 30.00, false, function disableInstantKill )
 	set t = null
 endfunction
-function GetUnitWithLessDistance takes unit zombie, group people returns unit
-	local unit closer
-	local unit person
-	local real nowdistance = 0
-	local real mindistance = 999999
-	loop
-		set person = FirstOfGroup(people)
-		exitwhen person == null
-		set nowdistance = DistanceBetweenPoints(GetUnitLoc(zombie), GetUnitLoc(person))
-		if nowdistance < mindistance then
-			set mindistance = nowdistance
-			set closer = person
-		endif
-		call GroupRemoveUnit(people, person)
-	endloop
-	set person = null
-	return closer
-endfunction
-function AttackZombie takes unit zombie, group aliade returns nothing
-	local unit victim
-	local group tempAliade = CreateGroup()
-	call GroupAddGroup(aliade, tempAliade)
-	set victim = GetUnitWithLessDistance(zombie, tempAliade)
-	call IssueTargetOrder( zombie, "attack", victim )
-	call DestroyGroup(tempAliade)
-	set zombie = null
-	set victim = null
-	set tempAliade = null
-endfunction
 function deadAlly takes nothing returns nothing
 	local timer deathTime = GetExpiredTimer()
 	local unit aliado = LoadUnitHandle(timerHashtable, GetHandleId(deathTime), 1)
@@ -600,16 +493,18 @@ function adjustingAngle takes real angle returns real
 	return angle
 endfunction
 function minAngleThunder takes real angle returns real
-	return adjustingAngle(angle - 90)
+	return adjustingAngle(angle - 45)
 endfunction
 function maxAngleThunder takes real angle returns real
-	return adjustingAngle(angle + 90)
+	return adjustingAngle(angle + 45)
 endfunction
-function isThisOnRadar takes real angle, real left, real right returns boolean
-	if angle >= 90 and angle <= 270 then
-		return ( angle > left ) and ( angle < right )
+function isThisOnRadar takes real angle, real left, real right, real middle returns boolean
+	local real adjust
+	set adjust = 45
+	if ( middle >= 360 - adjust and middle <= 360 ) or ( middle <= adjust and middle >= 0 ) then
+		return ( angle >= left and angle < 360 ) or ( angle <= right and angle >= 0 )
 	else
-		return ( angle > left ) or ( angle < right )
+		return ( angle >= left ) and ( angle <= right )
 	endif
 endfunction
 function useThunderGun takes unit caster, location target returns nothing
@@ -621,29 +516,29 @@ function useThunderGun takes unit caster, location target returns nothing
 	local effect effectThunder
 	local unit affectedUnit
 	local group tempAreaGroup = CreateGroup()
-	local group affectedUnitsGroup = CreateGroup()
 	set angle = AngleBetweenPoints(GetUnitLoc(caster), target)
 	set angleAdjust = angle + 180
 	set angleLeft = minAngleThunder(angleAdjust)
 	set angleRight = maxAngleThunder(angleAdjust)
-	set tempAreaGroup = GetUnitsInRangeOfLocAll(1400.00, GetUnitLoc(caster))
+	set tempAreaGroup = GetUnitsInRangeOfLocAll(900.00, GetUnitLoc(caster))
 	loop
 		set affectedUnit = FirstOfGroup(tempAreaGroup)
 		exitwhen(affectedUnit==null)
 		call GroupRemoveUnit(tempAreaGroup, affectedUnit)
 		set angleUnit = AngleBetweenPoints(GetUnitLoc(caster), GetUnitLoc(affectedUnit)) + 180
-		if isThisOnRadar(angleUnit, angleLeft, angleRight) then
-			call GroupAddUnit(affectedUnitsGroup, affectedUnit)
+		if isThisOnRadar(angleUnit, angleLeft, angleRight, angleAdjust) then
+			call GroupAddUnit(udg_groupAreaUnitsThunder, affectedUnit)
+		else
 		endif
 	endloop
-	call GroupAddGroup(affectedUnitsGroup, udg_groupAreaUnitsThunder)
-	call DestroyGroup(tempAreaGroup)
+	call EnableTrigger( gg_trg_EffectThunderGun )
 	set effectThunder = AddSpecialEffectLocBJ( GetUnitLoc(caster), "Abilities\\Spells\\Other\\Tornado\\TornadoElementalSmall.mdl" )
+	call BlzSetSpecialEffectColor( effectThunder, 160, 160, 160 )
 	call DestroyEffect( effectThunder )
-	call BlzSetSpecialEffectScale( effectThunder, 2.70 )
-	call BlzSetSpecialEffectHeight( effectThunder, 26.00 )
+	call BlzSetSpecialEffectScale( effectThunder, 3.00 )
+	call BlzSetSpecialEffectHeight( effectThunder, 23.00 )
 	call BlzSetSpecialEffectYaw( effectThunder, Deg2Rad(90.00) )
 	call BlzSetSpecialEffectPitch( effectThunder, Deg2Rad(( angle + 90.00 )) )
-	call TriggerSleepAction( 0.14 )
+	call TriggerSleepAction( 0.03 )
 	call BlzSetSpecialEffectScale( effectThunder, 0.00 )
 endfunction
