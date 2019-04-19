@@ -1,15 +1,21 @@
 globals
-	constant integer LIMIT_ZOMBIE		= 48
-	constant integer LIMIT_WOLF			= 12
+	constant integer LIMIT_ZOMBIE		= 12
+	constant integer LIMIT_HELLHOUNDS	= 2
+	constant integer LAPSE_HELLHOUNDS	= 4
 	constant integer USES_MISTERYBOX	= 10
 	constant integer MAX_PLAYERS		= 24
 	constant integer POINT_INSTAKILL	= 110
 	constant integer TIME_BREAKROUND	= 6
 	constant integer COST_MISTERYBOX	= 900
-	constant integer ONE_PERCENT		= 1
-	constant integer HUNDRED_PERCENT	= 100
-	integer usesMisterBox	= 0
-	integer round			= 50
+	constant integer ID_MISTERYBOX		= 'hbew'
+	constant integer ID_ZOMBIE			= 'nzom'
+	constant integer ID_HELLHOUNDS		= 'osw1'
+	constant integer ID_CRAWLER			= 'ugho'
+	constant integer ID_ALIADE			= 'zmar'
+	constant integer ID_MAX_AMMO		= 3
+	constant integer NUMBER_ZERO		= 0
+	integer usesMisterBox	= 10
+	integer round			= 0
 	integer players			= 0
 	integer totalZombie
 	integer inmapZombie
@@ -22,13 +28,17 @@ globals
 	boolean flagCreate
 	boolean isActiveDoublePoint	= false
 	boolean isActiveInstantKill	= false
-	boolean isActivateLight		= true
+	boolean isActivateLight		= false
 	boolean isTimeHellhounds	= false
 	string array weapons
+	string array bonus
+	effect fxbonus = null
+	boolean isBonusEnable		= true
 	destructable array objectCarpenter
 	destructable array perk
 	ally array allys
 	hashtable timerHashtable = InitHashtable()
+	trigger triggerRemoveBonus
 endglobals
 struct ally
 	unit marine
@@ -53,16 +63,21 @@ struct ally
 		set this.point = this.point - point
 	endmethod
 endstruct
+function activeLightSwitch takes nothing returns nothing
+	call BJDebugMsg("Luz Activada!")
+	call SetDestructableAnimationBJ( perk[0], "stand alternate" )
+	set isActivateLight = true
+endfunction
+function createMisteryBox takes location geo returns nothing
+	call CreateUnit( Player(PLAYER_NEUTRAL_PASSIVE), ID_MISTERYBOX, GetLocationX(geo), GetLocationY(geo), GetLocationZ(geo) )
+endfunction
 function reckonZombie takes integer numbRound, integer numbPlayer returns integer
 	local real numbZombie
 	set numbZombie = (numbPlayer * 0.01) * (numbRound * numbRound) + (numbPlayer * 0.1) * numbRound + numbPlayer
 	return R2I(numbZombie + 0.5)
 endfunction
 function isProbability takes integer percent returns boolean
-	if ( GetRandomInt( ONE_PERCENT, HUNDRED_PERCENT ) <= percent ) then
-		return true
-	endif
-	return false
+	return GetRandomInt( 1, 100 ) <= percent
 endfunction
 function GetUnitWithLessDistance takes unit zombie, group people returns unit
 	local unit closer
@@ -95,13 +110,12 @@ function AttackZombie takes unit zombie, group aliade returns nothing
 endfunction
 function createZombie takes nothing returns nothing
 	local unit unitZombie
-	local integer typeZombie = 'nzom'
-	if isActivateLight then
-		if isProbability(20) then
-			set typeZombie = 'ugho'
-		endif
+	if isActivateLight and isProbability(20) then
+		set unitZombie = CreateUnitAtLoc( Player(25), ID_CRAWLER, GetRandomLocInRect(regionZombie[GetRandomInt(0,3)]), 0.00 )
+		call AddSpecialEffectTarget( "Abilities\\Spells\\Undead\\PlagueCloud\\PlagueCloudCaster.mdl", unitZombie, "foot" )
+	else
+		set unitZombie = CreateUnitAtLoc( Player(25), ID_ZOMBIE, GetRandomLocInRect(regionZombie[GetRandomInt(0,3)]), 0.00 )
 	endif
-	set unitZombie = CreateUnitAtLoc( Player(25), typeZombie, GetRandomLocInRect(regionZombie[GetRandomInt(0,3)]), 0.00 )
 	call BlzSetUnitArmor( unitZombie, BlzGetUnitArmor(unitZombie) + (round * 0.5) )
 	call BlzSetUnitBaseDamage( unitZombie, BlzGetUnitBaseDamage(unitZombie, 1) + round, 1 )
 	call SetUnitMoveSpeed( unitZombie, GetUnitDefaultMoveSpeed(unitZombie) + (round * 0.1))
@@ -110,12 +124,26 @@ function createZombie takes nothing returns nothing
 	call GroupAddUnitSimple( unitZombie, udg_grupoZombies )
 endfunction
 function calTimeHellhounds takes integer ronda returns boolean
-	return ModuloInteger(ronda, GetRandomInt(4,7)) == 0
+	return ModuloInteger(ronda, LAPSE_HELLHOUNDS) == NUMBER_ZERO
 endfunction
-function reckonWolf takes integer numbRound, integer numbPlayer returns integer
-	local real numbWolf
-	set numbWolf = ( ( numbRound * numbRound ) / ( 2 * numbRound ) ) + numbPlayer
-	return R2I(numbWolf + 0.5)
+function createHellhounds takes nothing returns nothing
+	local unit unitHellhound
+	local location randomPoint
+	local unit randomUnit
+	set randomUnit = GroupPickRandomUnit(udg_grupoAliados)
+	set randomPoint = OffsetLocation(GetUnitLoc(randomUnit), GetRandomReal(-200.00, 200.00), GetRandomReal(-200.00, 200.00))
+	call PolledWait(GetRandomReal(0.00, 3.00))
+	call AddSpecialEffectLocBJ( randomPoint, "Abilities\\Weapons\\Bolt\\BoltImpact.mdl" )
+	call AddSpecialEffectLocBJ( randomPoint, "Abilities\\Spells\\Other\\Monsoon\\MonsoonBoltTarget.mdl" )
+	set unitHellhound = CreateUnitAtLoc( Player(25), ID_HELLHOUNDS, randomPoint, AngleBetweenPoints(randomPoint, GetUnitLoc(randomUnit)) )
+	call AddSpecialEffectTarget( "Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl", unitHellhound, "foot" )
+	call GroupAddUnitSimple( unitHellhound, udg_grupoZombies )
+	call BlzSetUnitArmor( unitHellhound, BlzGetUnitArmor(unitHellhound) + (round * 1.5) )
+endfunction
+function reckonHellhounds takes integer numbRound, integer numbPlayer returns integer
+	local real numbHellhounds
+	set numbHellhounds = ( ( numbRound * numbRound ) / ( 2 * numbRound ) ) + numbPlayer
+	return R2I(numbHellhounds + 0.5)
 endfunction
 function newZombie takes real wait returns nothing
 	set totalZombie = totalZombie - 1
@@ -124,8 +152,7 @@ function newZombie takes real wait returns nothing
 		call PolledWait(wait)
 	endif
 	if isTimeHellhounds then
-		call PolledWait(GetRandomReal(0.00, 6.00))
-		call TriggerExecute( gg_trg_CreateWolf )
+		call createHellhounds()
 	else
 		call createZombie()
 	endif
@@ -133,19 +160,18 @@ endfunction
 function newRound takes nothing returns nothing
 	local integer addZombie
 	set round = round + 1
-	set totalZombie = 0
-	set inmapZombie = 0
+	set totalZombie = NUMBER_ZERO
+	set inmapZombie = NUMBER_ZERO
 	call LeaderboardSetLabel(tablePoints, "Ronda " + I2S(round))
 	call PolledWait(TIME_BREAKROUND)
 	set isTimeHellhounds = calTimeHellhounds(round)
 	if isTimeHellhounds then
-		set totalZombie = reckonWolf(round, players)
-		set limitCreate = 2 * players
+		set totalZombie = reckonHellhounds(round, players)
+		set limitCreate = LIMIT_HELLHOUNDS * players
 	else
 		set totalZombie = reckonZombie(round, players)
-		set limitCreate = LIMIT_ZOMBIE
+		set limitCreate = LIMIT_ZOMBIE * players
 	endif
-	call BJDebugMsg("Total Zombies: " + I2S(totalZombie))
 	if totalZombie > limitCreate then
 		set addZombie = limitCreate
 	else
@@ -153,31 +179,63 @@ function newRound takes nothing returns nothing
 	endif	
 	set flagCreate = false
 	loop
-		exitwhen addZombie <= 0
-		call newZombie(0.00)
+		exitwhen addZombie <= NUMBER_ZERO
+		call newZombie(NUMBER_ZERO)
 		set addZombie = addZombie - 1
 	endloop
 	call EnableTrigger( gg_trg_AttractAliade )
 	set flagCreate = true
 endfunction
+function removeZombie takes nothing returns nothing
+	local timer removeTime = GetExpiredTimer()
+	call RemoveUnit( LoadUnitHandle(timerHashtable, GetHandleId(removeTime), 1) )
+	call PauseTimer( removeTime )
+	call DestroyTimer( removeTime )
+	set removeTime = null
+endfunction
+function isAliade takes nothing returns boolean
+	return IsUnitInGroup(GetTriggerUnit(), udg_grupoAliados)
+endfunction
+function removeBonus takes nothing returns nothing
+	call DestroyEffect(fxbonus)
+	set fxbonus = null
+	set isBonusEnable = true
+	call DisableTrigger( triggerRemoveBonus )
+	set triggerRemoveBonus = null
+endfunction
+function addBonus takes unit zombie, string bonusId returns nothing
+	local rect recBonus
+	if isBonusEnable then
+		set isBonusEnable = false
+		set recBonus = GetRectFromCircleBJ( GetUnitLoc( zombie ), 20 )
+		set fxbonus = AddSpecialEffectLoc(bonusId, GetUnitLoc(zombie))
+		set triggerRemoveBonus = CreateTrigger()
+		call TriggerRegisterEnterRectSimple( triggerRemoveBonus, recBonus )
+		call TriggerAddCondition( triggerRemoveBonus, Condition( function isAliade ) )
+		call TriggerAddAction( triggerRemoveBonus, function removeBonus )
+		call EnableTrigger( triggerRemoveBonus )
+	endif
+endfunction
 function deadZombie takes unit zombie returns nothing
+	local timer removeTime = CreateTimer()
+	call SaveUnitHandle(timerHashtable, GetHandleId(removeTime), 1, zombie)
+	call TimerStart( removeTime, 4.00, false, function removeZombie )
+	set removeTime = null
 	set inmapZombie = inmapZombie - 1
 	call GroupRemoveUnitSimple( zombie, udg_grupoZombies )
-	/*if ( GetUnitTypeId(zombie) == 'ugho' ) then
-		call TriggerSleepAction( 1.00 )
-		call UnitDamagePointLoc( zombie, 0, 200.00, GetUnitLoc(zombie), 50.00, ATTACK_TYPE_MELEE, DAMAGE_TYPE_NORMAL )
-	endif*/
-	if isProbability(1) then
-		call CreateItemLoc( udg_powerUps[GetRandomInt(0, 3)], GetUnitLoc(zombie) )
-	endif
-	call TriggerSleepAction( 3.00 )
-	call RemoveUnit( zombie )
 	if totalZombie > 0 and flagCreate == true and inmapZombie < limitCreate then
 		call newZombie(6.00)
 	endif
 	if totalZombie == 0 and inmapZombie == 0 then
+		if isTimeHellhounds then
+			call addBonus(zombie, bonus[ID_MAX_AMMO])
+		endif
 		call DisableTrigger( gg_trg_AttractAliade )
 		call newRound()
+	else
+		if isProbability(1) then
+			call addBonus(zombie, bonus[GetRandomInt(0, 4)])
+		endif
 	endif
 endfunction
 function IdOwner takes unit u returns integer
@@ -203,8 +261,7 @@ function addPointInScore takes integer point, unit aliade returns nothing
 	call SetTextTagFadepointBJ( GetLastCreatedTextTag(), 0.10 )
 endfunction
 function delPointInScore takes integer point, unit aliade returns nothing
-	local integer i = IdOwner(aliade)
-	local ally a = allys[i]
+	local ally a = allys[IdOwner(aliade)]
 	call a.delPoint(point)
 	call LeaderboardSetPlayerItemValueBJ( GetOwningPlayer(aliade), tablePoints, a.point )
 	call LeaderboardSortItemsByValue(tablePoints, false)
@@ -278,8 +335,7 @@ function randomGun takes unit box returns nothing
 	call DestroyTextTag(tag)
 endfunction
 function useMysteryBox takes unit box, unit user returns nothing
-	local integer i = IdOwner(user)
-	local ally a = allys[i]
+	local ally a = allys[IdOwner(user)]
 	if a.point >= COST_MISTERYBOX then
 		call SetUnitAnimation( box, "death" )
 		call SetUnitInvulnerable( box, true )
@@ -356,13 +412,17 @@ function init takes nothing returns nothing
 	set regionCarpenter[0] = gg_rct_RegionCarpenter01
 	set regionCarpenter[1] = gg_rct_RegionCarpenter02
 	set regionCarpenter[3] = gg_rct_RegionCarpenter03
+	set bonus[0] = "Objects\\InventoryItems\\runicobject\\runicobject.mdl"
+	set bonus[1] = "Objects\\InventoryItems\\CrystalShard\\CrystalShard.mdl"
+	set bonus[2] = "Objects\\InventoryItems\\BundleofLumber\\BundleofLumber.mdl"
+	set bonus[ID_MAX_AMMO] = "Objects\\InventoryItems\\Glyph\\Glyph.mdl"
+	set bonus[4] = "Objects\\InventoryItems\\PotofGold\\PotofGold.mdl"
 	set perk[0] = CreateDestructableLoc( 'BTrx', GetRectCenter(GetPlayableMapRect()), GetRandomDirectionDeg(), 1, 0 )
-	call SetDestructableAnimationBJ( perk[0], "stand alternate" )
-	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[1]), 0.00 )
+	call createMisteryBox(GetRectCenter(pointsMisteryBox[1]))
 	set isActiveDoublePoint = false
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
-			set person = CreateUnitAtLoc( Player(players), 'H002', GetPlayerStartLocationLoc(Player(players)), 0.00 )
+			set person = CreateUnitAtLoc( Player(players), ID_ALIADE, GetPlayerStartLocationLoc(Player(players)), 0.00 )
 			call SelectUnitForPlayerSingle( person, Player(players) )
 			call GroupAddUnit( udg_grupoAliados, person )
 			set allys[players] = ally.create(person)
@@ -404,7 +464,7 @@ function enabledx2 takes nothing returns nothing
 	set t = null
 endfunction
 function isMysteryBox takes nothing returns boolean
-	return ( GetUnitTypeId(GetFilterUnit()) == 'n001' )
+	return ( GetUnitTypeId(GetFilterUnit()) == ID_MISTERYBOX )
 endfunction
 function getPicked takes nothing returns nothing
 	call RemoveUnit( GetEnumUnit() )
@@ -417,7 +477,7 @@ function disableFireSale takes nothing returns nothing
 		set i = i + 1
 		exitwhen i == 6
 	endloop
-	call CreateUnitAtLoc( Player(PLAYER_NEUTRAL_PASSIVE), 'n001',  GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]), 0.00 )
+	call createMisteryBox(GetRectCenter(pointsMisteryBox[GetRandomInt(0, 5)]))
 	call AllRemoveBuff( udg_grupoAliados, 'B002' )
 	call PauseTimer( t )
 	call DestroyTimer( t )
@@ -455,7 +515,7 @@ function deadAlly takes nothing returns nothing
 	local integer i = IdOwner(aliado)
 	local ally a = allys[i]
 	if a.isDying then
-		call RemoveUnit( a.marine )
+		call KillUnit( a.marine )
 	endif
 	call DestroyTimer( deathTime )
 	set deathTime = null
@@ -463,15 +523,27 @@ endfunction
 function decaeAlly takes unit aliado returns nothing
 	local timer deathTime = CreateTimer()
 	local integer i = IdOwner(aliado)
+	local integer bj_forLoopAIndex
 	local ally a = allys[i]
+	call GroupRemoveUnitSimple( aliado, udg_grupoAliados )
+	if IsUnitGroupEmptyBJ(udg_grupoAliados) then
+		set bj_forLoopAIndex = 1
+		loop
+			exitwhen bj_forLoopAIndex > GetPlayers()
+			call CustomDefeatBJ( ConvertedPlayer(bj_forLoopAIndex), "Game Over" )
+			set bj_forLoopAIndex = bj_forLoopAIndex + 1
+		endloop
+	endif
 	set a.isDying = true
+	call UnitSuspendDecayBJ( true, a.marine )
+	//call ReviveHeroLoc( aliado, GetUnitLoc(aliado), false )
 	call SaveUnitHandle(timerHashtable, GetHandleId(deathTime), 1, a.marine)
 	call GroupRemoveUnit(udg_grupoAliados, a.marine)
 	call TimerStart( deathTime, 60.00, false, function deadAlly )
-	call PauseUnitBJ( true, a.marine )
-	call SetUnitAnimation( a.marine, "death" )
-	call SetUnitInvulnerable( a.marine, true )
-	set a.effTarget = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", a.marine, "overhead" )
+	//call PauseUnitBJ( true, a.marine )
+	//call SetUnitAnimation( a.marine, "death" )
+	//call SetUnitInvulnerable( a.marine, true )
+	//set a.effTarget = AddSpecialEffectTarget( "Abilities\\Spells\\Other\\Aneu\\AneuTarget.mdl", a.marine, "overhead" )
 endfunction
 function reviveAlly takes unit aliado returns nothing
 	local integer i = IdOwner(aliado)
@@ -523,12 +595,11 @@ function useThunderGun takes unit caster, location target returns nothing
 	set tempAreaGroup = GetUnitsInRangeOfLocAll(900.00, GetUnitLoc(caster))
 	loop
 		set affectedUnit = FirstOfGroup(tempAreaGroup)
-		exitwhen(affectedUnit==null)
+		exitwhen(affectedUnit == null)
 		call GroupRemoveUnit(tempAreaGroup, affectedUnit)
 		set angleUnit = AngleBetweenPoints(GetUnitLoc(caster), GetUnitLoc(affectedUnit)) + 180
 		if isThisOnRadar(angleUnit, angleLeft, angleRight, angleAdjust) then
 			call GroupAddUnit(udg_groupAreaUnitsThunder, affectedUnit)
-		else
 		endif
 	endloop
 	call EnableTrigger( gg_trg_EffectThunderGun )
