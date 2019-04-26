@@ -20,7 +20,7 @@ globals
 	integer totalZombie
 	integer inmapZombie
 	integer limitCreate
-	integer tempCountObstacle
+	integer tempCountObstacle = 0
 	leaderboard tablePoints
 	rect array pointsMisteryBox
 	rect array regionZombie
@@ -54,6 +54,12 @@ struct ally
 		set new.totalKill = 0
 		set new.isDying = false
 		set new.marine = marine
+		call UnitAddAbility( marine, 'A002' )
+		call UnitAddAbility( marine, 'A004' )
+		call UnitAddAbility( marine, 'ANcs' ) //Misiles
+		call UnitAddAbility( marine, 'Aens' ) //Misiles
+		call BlzSetUnitMaxMana( marine, 5000 )
+		call SetUnitManaBJ( marine, 5000 )
 		return new
 	endmethod
 	method addPoint takes integer point returns nothing
@@ -97,16 +103,42 @@ function GetUnitWithLessDistance takes unit zombie, group people returns unit
 	endloop
 	return closer
 endfunction
+function GetDestructableWithLessDistance takes unit zombie, real mindistance returns destructable
+	local destructable barrel = null
+	local real nowdistance = 0
+	local integer i = 0
+	loop
+		exitwhen i == tempCountObstacle
+		set i = i + 1
+		if GetDestructableLife(objectCarpenter[i]) > 0 then
+			set nowdistance = DistanceBetweenPoints(GetUnitLoc(zombie), GetDestructableLoc(objectCarpenter[i]))
+			if nowdistance < mindistance then
+				set mindistance = nowdistance
+				set barrel = objectCarpenter[i]
+			endif
+		endif
+	endloop
+	return barrel
+endfunction
 function AttackZombie takes unit zombie, group aliade returns nothing
 	local unit victim
+	local destructable victimBarrel = null
 	local group tempAliade = CreateGroup()
 	call GroupAddGroup(aliade, tempAliade)
 	set victim = GetUnitWithLessDistance(zombie, tempAliade)
-	call IssueTargetOrder( zombie, "attack", victim )
+	set victimBarrel = GetDestructableWithLessDistance(zombie, DistanceBetweenPoints(GetUnitLoc(zombie), GetUnitLoc(victim)))
+	if victimBarrel == null then
+		call BJDebugMsg( "La victima es: " + GetUnitName(victim) )
+		call IssueTargetOrder( zombie, "attack", victim )
+	else
+		call BJDebugMsg( "La victima es: " + GetDestructableName(victimBarrel) )
+		call IssueTargetOrder( zombie, "smart", victimBarrel )
+	endif
 	call DestroyGroup(tempAliade)
 	set tempAliade = null
 	set zombie = null
 	set victim = null
+	set victimBarrel = null
 endfunction
 function createZombie takes nothing returns nothing
 	local unit unitZombie
@@ -132,7 +164,7 @@ function createHellhounds takes nothing returns nothing
 	local unit randomUnit
 	set randomUnit = GroupPickRandomUnit(udg_grupoAliados)
 	set randomPoint = OffsetLocation(GetUnitLoc(randomUnit), GetRandomReal(-200.00, 200.00), GetRandomReal(-200.00, 200.00))
-	call PolledWait(GetRandomReal(0.00, 3.00))
+	//call PolledWait(GetRandomReal(0.00, 3.00))
 	call AddSpecialEffectLocBJ( randomPoint, "Abilities\\Weapons\\Bolt\\BoltImpact.mdl" )
 	call AddSpecialEffectLocBJ( randomPoint, "Abilities\\Spells\\Other\\Monsoon\\MonsoonBoltTarget.mdl" )
 	set unitHellhound = CreateUnitAtLoc( Player(25), ID_HELLHOUNDS, randomPoint, AngleBetweenPoints(randomPoint, GetUnitLoc(randomUnit)) )
@@ -366,11 +398,13 @@ function createTablePoints takes nothing returns nothing
 	endloop
 endfunction
 function addDestructibles takes nothing returns nothing
-    set objectCarpenter[tempCountObstacle] = GetEnumDestructable()
-    set tempCountObstacle = tempCountObstacle + 1
+	if GetDestructableTypeId(GetEnumDestructable()) == 'LTbr' then
+		set objectCarpenter[tempCountObstacle] = GetEnumDestructable()
+		set tempCountObstacle = tempCountObstacle + 1
+	endif
 endfunction
 function registerAllDestructibles takes nothing returns nothing
-    set tempCountObstacle = 0
+	set tempCountObstacle = 0
 	call EnumDestructablesInRectAll( GetPlayableMapRect(), function addDestructibles )
 endfunction
 function init takes nothing returns nothing
@@ -412,17 +446,21 @@ function init takes nothing returns nothing
 	set regionCarpenter[0] = gg_rct_RegionCarpenter01
 	set regionCarpenter[1] = gg_rct_RegionCarpenter02
 	set regionCarpenter[3] = gg_rct_RegionCarpenter03
+	set regionCarpenter[4] = gg_rct_RegionCarpenter04
 	set bonus[0] = "Objects\\InventoryItems\\runicobject\\runicobject.mdl"
 	set bonus[1] = "Objects\\InventoryItems\\CrystalShard\\CrystalShard.mdl"
 	set bonus[2] = "Objects\\InventoryItems\\BundleofLumber\\BundleofLumber.mdl"
 	set bonus[ID_MAX_AMMO] = "Objects\\InventoryItems\\Glyph\\Glyph.mdl"
 	set bonus[4] = "Objects\\InventoryItems\\PotofGold\\PotofGold.mdl"
 	set perk[0] = CreateDestructableLoc( 'BTrx', GetRectCenter(GetPlayableMapRect()), GetRandomDirectionDeg(), 1, 0 )
+	//Registro de Barriles
+	call registerAllDestructibles()
 	call createMisteryBox(GetRectCenter(pointsMisteryBox[1]))
 	set isActiveDoublePoint = false
 	loop
 		if ( GetPlayerSlotState( Player(players)) == PLAYER_SLOT_STATE_PLAYING ) then
 			set person = CreateUnitAtLoc( Player(players), ID_ALIADE, GetPlayerStartLocationLoc(Player(players)), 0.00 )
+			//call SetUnitExplodedBJ( person, true )
 			call SelectUnitForPlayerSingle( person, Player(players) )
 			call GroupAddUnit( udg_grupoAliados, person )
 			set allys[players] = ally.create(person)
@@ -535,8 +573,6 @@ function decaeAlly takes unit aliado returns nothing
 		endloop
 	endif
 	set a.isDying = true
-	call UnitSuspendDecayBJ( true, a.marine )
-	//call ReviveHeroLoc( aliado, GetUnitLoc(aliado), false )
 	call SaveUnitHandle(timerHashtable, GetHandleId(deathTime), 1, a.marine)
 	call GroupRemoveUnit(udg_grupoAliados, a.marine)
 	call TimerStart( deathTime, 60.00, false, function deadAlly )

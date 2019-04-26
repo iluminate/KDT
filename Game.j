@@ -11,6 +11,7 @@ struct Game
 	endmethod
 	private method ZombiesPerRound takes nothing returns nothing
 		set this.zombies = ( this.round + 6 ) * this.allies
+		set this.zombies = R2I( ( (this.allies * 0.01) * (this.round * this.round) + (this.allies * 0.1) * this.round + this.allies ) + 5.5 )
 	endmethod
 	public method nextRound takes nothing returns nothing
 		set this.round = this.round + 1
