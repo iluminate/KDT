@@ -1,0 +1,120 @@
+﻿STRING 1
+{
+KDT
+}
+
+STRING 2
+{
+4vs4
+}
+
+STRING 3
+{
+Kino der toten
+}
+
+STRING 4
+{
+Kevyn Estrada
+}
+
+STRING 5
+{
+Jugador 1
+}
+
+STRING 6
+{
+Fuerza 1
+}
+
+STRING 7
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 4|r]
+}
+
+STRING 8
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 5|r]
+}
+
+STRING 9
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 6|r]
+}
+
+STRING 10
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 7|r]
+}
+
+STRING 11
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 8|r]
+}
+
+STRING 12
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 9|r]
+}
+
+STRING 13
+// Habilidades: AEfk (Abanico de cuchillas), Tip (Ayuda - Normal)
+{
+Abanico de cuch|cffffcc00i|rllas - [|cffffcc00Nivel 10|r]
+}
+
+STRING 14
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA4> de daño.
+}
+
+STRING 15
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA5> de daño.
+}
+
+STRING 16
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA6> de daño.
+}
+
+STRING 17
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA7> de daño.
+}
+
+STRING 18
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA8> de daño.
+}
+
+STRING 19
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA9> de daño.
+}
+
+STRING 20
+// Habilidades: AEfk (Abanico de cuchillas), Ubertip (Ayuda - Normal - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. Cada cuchilla causa <AEfk,DataA10> de daño.
+}
+
+STRING 21
+// Habilidades: AEfk (Abanico de cuchillas), Researchubertip (Ayuda - Aprender - Ampliada)
+{
+La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. |n|n|cffffcc00Nivel 1|r - <AEfk,DataA1> de daño por objetivo. |n|cffffcc00Nivel 2|r - <AEfk,DataA2> de daño por objetivo. |n|cffffcc00Nivel 3|r - <AEfk,DataA3> de daño por objetivo. |n|cffffcc00Nivel 4|r - <AEfk,DataA4> de daño por objetivo. |n|cffffcc00Nivel 5|r - <AEfk,DataA5> de daño por objetivo. |n|cffffcc00Nivel 6|r - <AEfk,DataA6> de daño por objetivo. |n|cffffcc00Nivel 7|r - <AEfk,DataA7> de daño por objetivo. |n|cffffcc00Nivel 8|r - <AEfk,DataA8> de daño por objetivo. |n|cffffcc00Nivel 9|r - <AEfk,DataA9> de daño por objetivo. |n|cffffcc00Nivel 10|r - <AEfk,DataA10> de daño por objetivo. 
+}
+
