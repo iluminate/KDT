@@ -118,3 +118,8 @@ STRING 21
 La guardiana lanza una ráfaga de cuchillas, causando daño a los enemigos cercanos. |n|n|cffffcc00Nivel 1|r - <AEfk,DataA1> de daño por objetivo. |n|cffffcc00Nivel 2|r - <AEfk,DataA2> de daño por objetivo. |n|cffffcc00Nivel 3|r - <AEfk,DataA3> de daño por objetivo. |n|cffffcc00Nivel 4|r - <AEfk,DataA4> de daño por objetivo. |n|cffffcc00Nivel 5|r - <AEfk,DataA5> de daño por objetivo. |n|cffffcc00Nivel 6|r - <AEfk,DataA6> de daño por objetivo. |n|cffffcc00Nivel 7|r - <AEfk,DataA7> de daño por objetivo. |n|cffffcc00Nivel 8|r - <AEfk,DataA8> de daño por objetivo. |n|cffffcc00Nivel 9|r - <AEfk,DataA9> de daño por objetivo. |n|cffffcc00Nivel 10|r - <AEfk,DataA10> de daño por objetivo. 
 }
 
+STRING 22
+{
+Jugador 2
+}
+

@@ -1,24 +1,5 @@
 function InitGlobals()
 end
-
-function CreateAllItems()
-end
-
-function CreateNeutralPassiveBuildings()
-end
-
-function CreatePlayerBuildings()
-end
-
-function CreatePlayerUnits()
-end
-
-function CreateAllUnits()
-    CreateNeutralPassiveBuildings()
-    CreatePlayerBuildings()
-    CreatePlayerUnits()
-end
-
 function levelup(hero)
     SetHeroAgi(hero, GetHeroAgi(hero) + 5)
     SetHeroStr(hero, GetHeroStr(hero) + 5)
@@ -28,11 +9,9 @@ function levelup(hero)
     IncUnitAbilityLevel(hero, FourCC("AHfs"))
     IncUnitAbilityLevel(hero, FourCC("AUdd"))
 end
-
 function createZombie(player)
     CreateUnit( player, FourCC("nzom"), 0, 0, 0 )
 end
-
 function createMarine(player)
     u = CreateUnit( player, FourCC("H000"), 0, 0, 0 )
     UnitAddAbility(u, FourCC("Afzy"))
@@ -40,7 +19,6 @@ function createMarine(player)
     BlzSetHeroProperName(u, GetPlayerName( player ))
     levelup(u)
 end
-
 function createCreeps(count)
     for i=0,24 do
         if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING then
@@ -63,11 +41,12 @@ end
 
 function Trig_die_Actions()
     RemoveUnit(GetTriggerUnit())
-    CreateItem(FourCC("stpg"), -100, 0)
-    CreateItem(FourCC("glsk"), -100, 0)
-    CreateItem(FourCC("mort"), -100, 0)
-    CreateItem(FourCC("mort"), -100, 0)
-    CreateItem(FourCC("mcou"), -100, 0)
+    --CreateItem(FourCC("stpg"), -100, 0)
+    --CreateItem(FourCC("glsk"), -100, 0)
+    --CreateItem(FourCC("mort"), -100, 0)
+    --CreateItem(FourCC("mort"), -100, 0)
+    --CreateItem(FourCC("mcou"), -100, 0)
+    CreateItem(FourCC("texp"), -100, 0)
 end
 
 function Trig_start_Actions()
@@ -75,7 +54,7 @@ function Trig_start_Actions()
 end
 
 function Trig_creep_Actions()
-    createCreeps(1)
+    createCreeps(4)
 end
 
 function Trig_pick_Actions()
@@ -100,7 +79,6 @@ function Trig_pick_Actions()
         RemoveItem(new_item)
     end
 end
-
 function InitTrig_level()
     gg_trg_level = CreateTrigger()
     TriggerRegisterAnyUnitEventBJ(gg_trg_level, EVENT_PLAYER_HERO_LEVEL)
@@ -119,9 +97,13 @@ function InitTrig_start()
     TriggerAddAction(gg_trg_start, Trig_start_Actions)
 end
 
+function Trig_creep_Actions()
+        createCreeps(10)
+end
+
 function InitTrig_creep()
     gg_trg_creep = CreateTrigger()
-    TriggerRegisterTimerEventPeriodic(gg_trg_creep, 3.00)
+    TriggerRegisterTimerEventPeriodic(gg_trg_creep, 5.00)
     TriggerAddAction(gg_trg_creep, Trig_creep_Actions)
 end
 
@@ -145,10 +127,23 @@ function InitCustomPlayerSlots()
     SetPlayerRacePreference(Player(0), RACE_PREF_HUMAN)
     SetPlayerRaceSelectable(Player(0), true)
     SetPlayerController(Player(0), MAP_CONTROL_USER)
+    SetPlayerStartLocation(Player(1), 1)
+    SetPlayerColor(Player(1), ConvertPlayerColor(1))
+    SetPlayerRacePreference(Player(1), RACE_PREF_HUMAN)
+    SetPlayerRaceSelectable(Player(1), true)
+    SetPlayerController(Player(1), MAP_CONTROL_USER)
 end
 
 function InitCustomTeams()
     SetPlayerTeam(Player(0), 0)
+    SetPlayerTeam(Player(1), 0)
+end
+
+function InitAllyPriorities()
+    SetStartLocPrioCount(0, 1)
+    SetStartLocPrio(0, 0, 1, MAP_LOC_PRIO_HIGH)
+    SetStartLocPrioCount(1, 1)
+    SetStartLocPrio(1, 0, 0, MAP_LOC_PRIO_HIGH)
 end
 
 function main()
@@ -158,8 +153,6 @@ function main()
     SetAmbientDaySound("LordaeronSummerDay")
     SetAmbientNightSound("LordaeronSummerNight")
     SetMapMusic("Music", true, 0)
-    CreateAllItems()
-    CreateAllUnits()
     InitBlizzard()
     InitGlobals()
     InitCustomTriggers()
@@ -168,11 +161,14 @@ end
 function config()
     SetMapName("TRIGSTR_001")
     SetMapDescription("TRIGSTR_003")
-    SetPlayers(1)
-    SetTeams(1)
-    SetGamePlacement(MAP_PLACEMENT_USE_MAP_SETTINGS)
+    SetPlayers(2)
+    SetTeams(2)
+    SetGamePlacement(MAP_PLACEMENT_TEAMS_TOGETHER)
     DefineStartLocation(0, 0.0, -256.0)
+    DefineStartLocation(1, 0.0, -256.0)
     InitCustomPlayerSlots()
     SetPlayerSlotAvailable(Player(0), MAP_CONTROL_USER)
+    SetPlayerSlotAvailable(Player(1), MAP_CONTROL_USER)
     InitGenericPlayerSlots()
+    InitAllyPriorities()
 end
