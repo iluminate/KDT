@@ -15,31 +15,46 @@ function gameClass:new(o)
     self.__index = self
     self.round=0
     self.players=GetPlayers()
-    self.zombies=0
-    self.maxZombies=24+((self.players-1)*6)
+    self.maxZombis=24+((self.players-1)*6)
+    self.dieZombis=0
+    self.mapZombis=0
+    self.tmpZombis=0
     return o
 end
-function gameClass:getZombies()
-    return math.ceil((self.round*0.15)*self.maxZombies)
+function gameClass:setTmpZombis(tmpZombis)
+    self.tmpZombis = tmpZombis
 end
-function gameClass:setRound(round)
-    self.round = round
+function gameClass:getTmpZombis(tmpZombis)
+    return self.tmpZombis
 end
-function gameClass:getRound()
-    return self.round
+function gameClass:getMaxZombis(tmpZombis)
+    return self.maxZombis
+end
+function gameClass:setDieZombis(dieZombis)
+    self.dieZombis = dieZombis
+end
+function gameClass:getDieZombis()
+    return self.dieZombis
+end
+function gameClass:isNewRound()
+    return (self.mapZombis-self.dieZombis==0)
+end
+function gameClass:getMapZombis()
+    return self.mapZombis
+end
+function gameClass:calMapZombis()
+    return math.ceil((self.round*0.15)*self.maxZombis)
 end
 function gameClass:newRound()
-    self:setRound(self:getRound() + 1)
-    print("# RONDA: " .. self:getRound())
-    print("# MAX ZOMBI: " .. self.maxZombies)
-    print("# ZOMBI: " .. self:getZombies())
+    self.round = self.round + 1
+    self.dieZombis = 0
+    self.tmpZombis = 0
+    self.mapZombis = self:calMapZombis()
+    print("RONDA: " .. self.round)
 end
 --End ClassGame
 
 --Functions
-function GetZombies()
-    return 4
-end
 function createMarine(player)
     hero = CreateUnit( player, FourCC(C_ID_UNIT_MARINE), 0, 0, 0 )
     SelectUnitForPlayerSingle( hero, player )
@@ -53,6 +68,13 @@ function createMarine(player)
 end
 function createZombie(player)
     CreateUnit( player, FourCC(C_ID_UNIT_ZOMBIE), 0, 0, 0 )
+end
+function createZombis(count)
+    print("Zombis creados: " .. count)
+    for i=1,count do
+        Game:setTmpZombis(Game:getTmpZombis() + 1)
+        CreateUnit( Player(24), FourCC(C_ID_UNIT_ZOMBIE), 0, 0, 0 )
+    end
 end
 function AddItemCharges(item, charges)
     if charges == 0 then
@@ -70,10 +92,20 @@ function Trig_level_Actions()
     SetHeroInt(hero, GetHeroInt(hero) + 1)
 end
 function Trig_dead_Actions()
-    RemoveUnit(GetTriggerUnit())
+    local unit = GetTriggerUnit()
+    RemoveUnit(unit)
+    if GetUnitTypeId(unit) == FourCC(C_ID_UNIT_ZOMBIE) then
+        Game:setDieZombis(Game:getDieZombis() + 1)
+        print("ZOMBIS(die-Tmp-all-max): " .. Game:getDieZombis() .. "-" .. Game:getTmpZombis() .. "-" .. Game:getMapZombis() .. "-" .. Game:getMaxZombis())
+        if Game:isNewRound() then
+            Game:newRound()
+            createZombis(Game:getMapZombis() > Game:getMaxZombis() and Game:getMaxZombis() or Game:getMapZombis())
+        else
+            createZombis(Game:getMapZombis() - Game:getTmpZombis() ~= 0 and 1)
+        end
+    end
 end
 function Trig_creep_Actions()
-    Game:newRound()
     for i=1,GetPlayers() do
         createZombie(Player(24))
     end
@@ -123,7 +155,7 @@ end
 function InitCustomTriggers()
     InitTrig_level()
     InitTrig_dead()
-    InitTrig_creep()
+    --InitTrig_creep()
     InitTrig_pick()
 end
 function InitCreateHeros()
@@ -145,6 +177,8 @@ function main()
     InitGlobals()
     InitCustomTriggers()
     InitCreateHeros()
+    Game:newRound()
+    createZombis((Game:getMapZombis() > Game:getMaxZombis() and Game:getMaxZombis() or Game:getMapZombis()))
 end
 function config()
     SetPlayers(4)
