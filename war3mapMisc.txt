@@ -1,4 +1,3 @@
 [Misc]
 HeroFactorXP=80,70,60,50
 MaxHeroLevel=100
-
