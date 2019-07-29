@@ -5,6 +5,7 @@ function InitGlobals()
 
     --variables
     Game = gameClass:new()
+    marineHero = {}
 end
 
 --ClassGame
@@ -50,7 +51,10 @@ function gameClass:newRound()
     self.dieZombis = 0
     self.tmpZombis = 0
     self.mapZombis = self:calMapZombis()
-    print("RONDA: " .. self.round)
+    print("Ronda: " .. self.round)
+    for i=0,GetPlayers() do
+        ReviveHero(marineHero[i], 0, 0, false)
+    end
 end
 --End ClassGame
 
@@ -65,12 +69,12 @@ function createMarine(player)
     SetHeroAgi(hero, 13)
     SetHeroStr(hero, 14)
     SetHeroInt(hero, 15)
+    return hero
 end
 function createZombie(player)
     CreateUnit( player, FourCC(C_ID_UNIT_ZOMBIE), 0, 0, 0 )
 end
 function createZombis(count)
-    print("Zombis creados: " .. count)
     for i=1,count do
         Game:setTmpZombis(Game:getTmpZombis() + 1)
         CreateUnit( Player(24), FourCC(C_ID_UNIT_ZOMBIE), 0, 0, 0 )
@@ -93,21 +97,16 @@ function Trig_level_Actions()
 end
 function Trig_dead_Actions()
     local unit = GetTriggerUnit()
-    RemoveUnit(unit)
     if GetUnitTypeId(unit) == FourCC(C_ID_UNIT_ZOMBIE) then
+        RemoveUnit(unit)
         Game:setDieZombis(Game:getDieZombis() + 1)
-        print("ZOMBIS(die-Tmp-all-max): " .. Game:getDieZombis() .. "-" .. Game:getTmpZombis() .. "-" .. Game:getMapZombis() .. "-" .. Game:getMaxZombis())
+        --print("zombis: " .. Game:getDieZombis() .. "-" .. Game:getTmpZombis() .. "-" .. Game:getMapZombis() .. "-" .. Game:getMaxZombis())
         if Game:isNewRound() then
             Game:newRound()
             createZombis(Game:getMapZombis() > Game:getMaxZombis() and Game:getMaxZombis() or Game:getMapZombis())
         else
-            createZombis(Game:getMapZombis() - Game:getTmpZombis() ~= 0 and 1)
+            createZombis(Game:getMapZombis() - Game:getTmpZombis() ~= 0 and 1 or 0)
         end
-    end
-end
-function Trig_creep_Actions()
-    for i=1,GetPlayers() do
-        createZombie(Player(24))
     end
 end
 function Trig_pick_Actions()
@@ -140,11 +139,6 @@ function InitTrig_dead()
     TriggerRegisterAnyUnitEventBJ(gg_trg_dead, EVENT_PLAYER_UNIT_DEATH)
     TriggerAddAction(gg_trg_dead, Trig_dead_Actions)
 end
-function InitTrig_creep()
-    gg_trg_creep = CreateTrigger()
-    TriggerRegisterTimerEventPeriodic(gg_trg_creep, 4.00)
-    TriggerAddAction(gg_trg_creep, Trig_creep_Actions)
-end
 function InitTrig_pick()
     gg_trg_pick = CreateTrigger()
     TriggerRegisterAnyUnitEventBJ(gg_trg_pick, EVENT_PLAYER_UNIT_PICKUP_ITEM)
@@ -155,14 +149,13 @@ end
 function InitCustomTriggers()
     InitTrig_level()
     InitTrig_dead()
-    --InitTrig_creep()
     InitTrig_pick()
 end
 function InitCreateHeros()
     for i=0,GetPlayers() do
         --if MeleeWasUserPlayer(Player(i)) then
         if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING then
-            createMarine(Player(i))
+            marineHero[i]=createMarine(Player(i))
         end
     end
 end
@@ -181,6 +174,6 @@ function main()
     createZombis((Game:getMapZombis() > Game:getMaxZombis() and Game:getMaxZombis() or Game:getMapZombis()))
 end
 function config()
-    SetPlayers(4)
+    SetPlayers(8)
     InitCustomPlayerSlots()
 end
