@@ -2,7 +2,6 @@ function InitGlobals()
     --constants
     C_ID_UNIT_ZOMBIE="nzom"
     C_ID_UNIT_MARINE="H000"
-    C_ID_UNIT_AIRSHIP="nzep"
 
     --variables
     Game = gameClass:new()
@@ -103,12 +102,6 @@ function CreateBoard()
     LeaderboardSetSizeByItemCount(board, GetPlayers())
     return board
 end
-function CreateAirship(player)
-    local airship
-    airship = CreateUnitAtLoc( player, FourCC(C_ID_UNIT_AIRSHIP), GetPlayerStartLocationLoc(player), 0.00 )
-    SetUnitFlyHeight(airship, 1000.00, 0)
-    SetUnitMoveSpeed(airship, 522)
-end
 function CreateMarine(player)
     local hero
     --hero = CreateUnit( player, FourCC(C_ID_UNIT_MARINE), 0, 0, 0 )
@@ -121,6 +114,13 @@ function CreateMarine(player)
     UnitAddAbility(hero, FourCC("Acsf")) --Espiritu salvaje
     UnitAddAbility(hero, FourCC("ANc3")) --Cohetes de dispersion
     UnitAddAbility(hero, FourCC("AEsb")) --Estrella fugaz
+    --UnitAddAbility(hero, FourCC("AHbz"))
+    --UnitAddAbility(hero, FourCC("AHfs"))
+    --UnitAddAbility(hero, FourCC("AUdd"))
+    --UnitAddAbility(hero, FourCC("Aply"))
+    --UnitAddAbility(hero, FourCC("Ahea"))
+    --UnitAddAbility(hero, FourCC("AHtc"))
+    --UnitAddAbility(hero, FourCC("AHtc"))
     BlzSetHeroProperName(hero, "Marine")
     SetHeroAgi(hero, 18)
     SetHeroStr(hero, 16)
@@ -131,7 +131,7 @@ end
 function CreateZombis(count)
     for i=1,count do
         Game:setTmpZombis(Game:getTmpZombis() + 1)
-        zombi=CreateUnit( Player(24), FourCC(C_ID_UNIT_ZOMBIE), math.random(-40000,40000), math.random(-40000,40000), 0 )
+        zombi=CreateUnit( Player(24), FourCC(C_ID_UNIT_ZOMBIE), math.random(-4000,4000), math.random(-4000,4000), 0 )
         GroupAddUnit(groupZombis, zombi)
         --ContinuousAttack(zombi)
     end
@@ -201,9 +201,7 @@ function Trig_init_Actions()
     for i=0,GetPlayers() do
         --if MeleeWasUserPlayer(Player(i)) then
         if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING then
-            SetCameraFieldForPlayer( Player(i), CAMERA_FIELD_TARGET_DISTANCE, 3500.00, 0 )
             marineHero[i]=CreateMarine(Player(i))
-            CreateAirship(Player(i))
         end
     end
     CreateZombis((Game:getMapZombis() > Game:getMaxZombis() and Game:getMaxZombis() or Game:getMapZombis()))
@@ -251,7 +249,6 @@ function InitCustomTriggers()
     InitTrig_init()
     --InitTrig_attack()
 end
-
 function InitCustomPlayerSlots()
     for i=0,GetPlayers()-1 do
         SetPlayerStartLocation(Player(i), i)
@@ -267,15 +264,35 @@ function main()
 end
 
 function config()
-    SetPlayers(24)
-    SetTeams(24)
+    SetPlayers(12)
+    --SetTeams(23)
+    --SetGamePlacement(MAP_PLACEMENT_TEAMS_TOGETHER)
     for i=0,GetPlayers()-1 do
-        DefineStartLocation(i, math.random(-40000,40000), math.random(-40000,40000))
+        DefineStartLocation(i, math.random(-4000,4000), math.random(-4000,4000))
     end
     InitCustomPlayerSlots()
-    for i=0,GetPlayers()-1 do
-        SetPlayerSlotAvailable(Player(i), i > 0 and MAP_CONTROL_COMPUTER or MAP_CONTROL_USER)
-    end
+    --SetPlayerSlotAvailable(Player(0), MAP_CONTROL_USER)
+    --SetPlayerSlotAvailable(Player(1), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(2), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(3), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(4), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(5), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(6), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(7), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(8), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(9), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(10), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(11), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(12), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(13), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(14), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(16), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(17), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(18), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(19), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(20), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(21), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(22), MAP_CONTROL_COMPUTER)
+    --SetPlayerSlotAvailable(Player(23), MAP_CONTROL_COMPUTER)
     InitGenericPlayerSlots()
 end
-
